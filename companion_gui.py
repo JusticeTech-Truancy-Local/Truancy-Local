@@ -9,9 +9,11 @@ class TruancyWindow(QMainWindow):
 
         self.setWindowTitle("TruancyRecorder")
 
+        # Associated with print_students
         pdf_button = QPushButton("Load PDF")
         pdf_button.clicked.connect(self.print_students)
 
+        # Associated with open excel
         excel_button = QPushButton("Open Excel File")
         excel_button.clicked.connect(self.open_excel)
 
@@ -43,6 +45,5 @@ class TruancyWindow(QMainWindow):
                 print(f"Opened Excel file: {excel_path}")
                 print(f"Workbook has {len(wb.sheets)} sheet(s)")
 
-                # You can do more with the workbook here
             except Exception as e:
                 print(f"Error opening Excel file: {e}")
