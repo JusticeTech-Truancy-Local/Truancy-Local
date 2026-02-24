@@ -1,7 +1,9 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QVBoxLayout, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QVBoxLayout, QFileDialog, QMessageBox, QTextEdit
+from PyQt6.QtGui import QTextCharFormat, QTextCursor, QColor
 import xlwings as xw
 
 from pdf_parser import extract_students_from_pdf
+from constructor import Student
 
 class TruancyWindow(QMainWindow):
     def __init__(self):
@@ -25,10 +27,15 @@ class TruancyWindow(QMainWindow):
         add_absences_button = QPushButton("Add Total Absences to Excel")
         add_absences_button.clicked.connect(self.add_total_absences)
 
+        # Text box to hold status messages for user
+        self.status_box = QTextEdit()
+        self.status_box.setReadOnly(True)
+
         center_layout = QVBoxLayout()
         center_layout.addWidget(pdf_button)
         center_layout.addWidget(excel_button)
         center_layout.addWidget(add_absences_button)
+        center_layout.addWidget(self.status_box)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
@@ -48,6 +55,17 @@ class TruancyWindow(QMainWindow):
             self.students[0].printHeaders()
             for s in self.students:
                 s.print()
+
+            # Display loaded students and hours in the status box
+            cursor = self.status_box.textCursor()
+            format = QTextCharFormat()
+            for s in self.students:
+                # Highlight students over unexcused threshold in red
+                if float(s.unexcused) >= Student.redThreshold:
+                    format.setBackground(QColor(255, 0, 0, 80))
+                cursor.insertText(f"{s.firstName} {s.lastName} - {s.unexcused} hrs\n", format)
+                format.clearBackground()
+
             QMessageBox.information(self, "Success", f"Loaded {len(self.students)} students from PDF")
 
     def open_excel(self):
