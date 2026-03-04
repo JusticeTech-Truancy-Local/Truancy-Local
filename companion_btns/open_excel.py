@@ -9,6 +9,11 @@ def open_excel(self):
             self.workbook = xw.Book(excel_path)
             print(f"Opened Excel file: {excel_path}")
             print(f"Workbook has {len(self.workbook.sheets)} sheet(s)")
+
+            # Update path box and persistence with QSettings
+            self.excel_path_box.setText(excel_path)
+            self.settings.setValue("last_excel_path", excel_path)
+
             QMessageBox.information(self, "Success", f"Opened Excel file with {len(self.workbook.sheets)} sheet(s)")
 
         except Exception as e:

@@ -7,7 +7,8 @@ def print_students(self):
     pdf_path = QFileDialog.getOpenFileName(self, "Open Truancy Report", "/home", "PDF (*.pdf)")[0]
     if not pdf_path:
         return
-        
+    
+    self.pdf_path_box.setText(pdf_path)
     self.students = extract_students_from_pdf(pdf_path)
     if len(self.students) == 0:
         print("No students")
