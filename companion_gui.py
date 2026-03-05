@@ -73,8 +73,19 @@ class TruancyWindow(QMainWindow):
         self.check_files_ready()
 
     def check_files_ready(self):
+        has_students = bool(self.students)
+        # Check if excel window currently exists; clear if the window has been closed
+        try:
+            _ = self.workbook.app.visible
+        except Exception:
+           self.workbook = None
+
+        has_workbook = bool(self.workbook)
+
         # Update checkboxes to show whether file is loaded
-        self.pdf_check.setChecked(bool(self.students))
-        self.excel_check.setChecked(bool(self.workbook))
+        self.pdf_check.setChecked(has_students)
+        self.excel_check.setChecked(has_workbook)
         # Grey out the add report to sheet button unless all data has been loaded
-        self.add_absences_button.setEnabled(bool(self.students) and bool(self.workbook))
+        self.add_absences_button.setEnabled(has_students and has_workbook)
+
+        return has_students and has_workbook
