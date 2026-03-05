@@ -25,17 +25,6 @@ def open_pdf(window):
         for s in students:
             s.print()
 
-        # Display loaded students and hours in the status box
-        cursor = window.status_box.textCursor()
-        format = QTextCharFormat()
-        for s in students:
-            # Highlight students over unexcused threshold in red
-            if float(s.unexcused) >= Student.redThreshold:
-                format.setBackground(QColor(255, 0, 0, 80))
-            cursor.insertText(f"{s.firstName} {s.lastName} - {s.unexcused} hrs\n", format)
-            format.clearBackground()
-        cursor.setCharFormat(format)
-
     window.pdf_opened.emit(students)
 
 

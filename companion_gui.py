@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel
+from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
+    QScrollArea
 from PyQt6.QtCore import pyqtSlot, pyqtSignal
 import xlwings as xw
 
@@ -44,6 +45,9 @@ class TruancyWindow(QMainWindow):
         # Text box to hold status messages for user
         self.status_box = QTextEdit()
         self.status_box.setReadOnly(True)
+        status_scroll = QScrollArea()
+        status_scroll.setWidget(self.status_box)
+        status_scroll.setWidgetResizable(True)
 
         center_layout = QGridLayout()
         center_layout.addWidget(pdf_button, 0, 1, 1, 1)
@@ -52,7 +56,7 @@ class TruancyWindow(QMainWindow):
         center_layout.addWidget(self.excel_check, 1, 0, 1, 1)
         center_layout.addWidget(self.add_absences_button, 2, 1, 1, 1)
         center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
-        center_layout.addWidget(self.status_box, 3, 0, 1, 2)
+        center_layout.addWidget(status_scroll, 3, 0, 1, 2)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)

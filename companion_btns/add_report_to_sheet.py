@@ -1,3 +1,4 @@
+from PyQt6.QtGui import QTextCharFormat, QColor, QFont
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from datetime import datetime
 
@@ -92,7 +93,11 @@ def add_report_to_sheet(window):
         
         # Track data
         no_match = 0
-        over_limit_count = 0
+        groups = {"2nd time over limit": [],
+                  "1st time over limit": [],
+                  "No longer over": [],
+                  "New students": [],
+                  "All students over limit": []}
         
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
@@ -126,9 +131,8 @@ def add_report_to_sheet(window):
                 # Remove from unmatched set
                 unmatched.remove(matched_student)
 
-                has_data, over_limit = add_student(sheet, matched_student, insert_col, row)
-                if over_limit:
-                    over_limit_count += 1
+                history = add_student(sheet, matched_student, insert_col, row)
+                track_group(matched_student, history, groups)
 
             else:
                 # No match found; leave blank no value no color
@@ -142,7 +146,9 @@ def add_report_to_sheet(window):
         extra_row = last_row + 1
         for student in unmatched:
             sheet.range(f'B{extra_row}')
-            add_student(sheet, student, insert_col, extra_row)
+
+            history = add_student(sheet, student, insert_col, extra_row)
+            track_group(student, history, groups, True)
 
             sheet.range(f'A{extra_row}').value = student.lastName
             sheet.range(f'B{extra_row}').value = student.firstName
@@ -155,23 +161,10 @@ def add_report_to_sheet(window):
         # Print summary
         print(f"\n=== SUMMARY ===")
         print(f"No match found: {no_match}")
-        print(f"Over limit (Red): {over_limit_count}")
         print(f"Total rows processed: {last_row - 1}")
 
-        
-        # # Show results to user
-        # QMessageBox.information(
-        #     window,
-        #     "Success",
-        #     f"Added Total Absences column with color coding!\n\n"
-        #     f"Matched by Student ID: {matched_by_id}\n"
-        #     f"Matched by Name: {matched_by_name}\n"
-        #     f"No match found: {no_match}\n\n"
-        #     f" High Risk (40+ hrs): {high_risk_count}\n"
-        #     f" Medium Risk (21-39 hrs): {medium_risk_count}\n"
-        #     f" Low Risk (0-20 hrs): {low_risk_count}\n\n"
-        #     f"Total rows: {last_row - 1}"
-        # )
+        # Write results to status box
+        update_status_box(window.status_box, groups, label)
         
     except Exception as e:
         import traceback
@@ -181,8 +174,16 @@ def add_report_to_sheet(window):
 
 
 def add_student(sheet, student, column, row):
-    over_limit = False
-    has_data = False
+    history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data
+
+    # March thru previous weeks to record history of being over the limit
+    for c in range(max(12, column-2), column):
+        val = sheet.range(f'{_col_letter(c)}{row}').value
+        try:
+            val_int = int(val)
+            history.append(val_int >= Student.redThreshold)
+        except TypeError:
+            history.append(None)
 
     if student.unexcused:
         try:
@@ -193,33 +194,80 @@ def add_student(sheet, student, column, row):
             cell = sheet.range(f'{_col_letter(column)}{row}')
             cell.value = unexcused
 
-            # Color code based on absence hours
-            if unexcused >= Student.redThreshold:
-                # Red for over limit
-                cell.color = (255, 0, 0)  # Red
-                over_limit = True
-
             # Update totals columns
             sheet.range(f'H{row}').value = suspension
             sheet.range(f'I{row}').value = excused
             sheet.range(f'J{row}').value = unexcused
             # Check for mismatch with report's total and calculated total
-            if str(excused + unexcused) != student.absenceTotal:
+            if str(excused + unexcused) != total_no_suspension:
                 print(f"!!! Total hours mismatch for {student.firstName} {student.lastName}"
-                      f": Excel says {excused + unexcused}, PDF says {student.absenceTotal}")
+                      f": Excel says {excused + unexcused}, PDF says {total_no_suspension}")
             sheet.range(f'K{row}').value = total_no_suspension
 
-            has_data = True
+            # Color code based on absence hours
+            if unexcused >= Student.redThreshold:
+                # Red for over limit
+                cell.color = (255, 0, 0)  # Red
+                history.append(True)
+            else:
+                history.append(False)
 
         except (ValueError, TypeError):
             print(f"Warning: Could not convert an absence total")
             # Invalid data
             sheet.range(f'{_col_letter(column)}{row}').value = "no data"
+            history.append(None)
     else:
         # Student matched but has no absence data; no color
         sheet.range(f'{_col_letter(column)}{row}').value = "no data"
+        history.append(None)
 
-    return has_data, over_limit
+    return history
+
+
+def track_group(student, history, groups, is_new=False):
+    # Add students to groups based on whether they were over limits the last three weeks
+    updated_history = [False * (3 - len(history))] + [bool(x) for x in history]
+
+    if is_new:
+        groups["New students"].append(student)
+
+    if updated_history[-1]:
+        groups["All students over limit"].append(student)
+        if updated_history[-2]:
+            if not updated_history[-3]:
+                groups["2nd time over limit"].append(student)
+        else:
+            groups["1st time over limit"].append(student)
+    elif updated_history[-2]:
+            groups["No longer over"].append(student)
+
+
+def update_status_box(status_box, groups, label):
+    cursor = status_box.textCursor()
+    format = QTextCharFormat()
+
+    format.setFontUnderline(True)
+    cursor.insertText(label, format)
+    format.setFontUnderline(False)
+
+    order = ["New students", "1st time over limit", "2nd time over limit", "No longer over", "All students over limit"]
+    highlight = {"2nd time over limit"}
+
+    for group in order:
+        format.setFontWeight(QFont.Weight.Bold)
+        cursor.insertText("\n"+group+"\n", format)
+        format.setFontWeight(QFont.Weight.Normal)
+
+        if group in highlight:
+            format.setBackground(QColor(255, 0, 0, 80))
+
+        for student in groups[group]:
+            cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
+
+        format.clearBackground()
+
+    cursor.setCharFormat(format)
 
 
 def _col_letter(col_num):
