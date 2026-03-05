@@ -18,7 +18,7 @@ def open_pdf(self):
 
     if len(students) == 0:
         print("No students")
-        QMessageBox.warning(self, "No Data", "No students found in PDF")
+    #     QMessageBox.warning(self, "No Data", "No students found in PDF")
 
     else:
         students[0].printHeaders()
@@ -34,8 +34,7 @@ def open_pdf(self):
                 format.setBackground(QColor(255, 0, 0, 80))
             cursor.insertText(f"{s.firstName} {s.lastName} - {s.unexcused} hrs\n", format)
             format.clearBackground()
-
-        QMessageBox.information(self, "Success", f"Loaded {len(students)} students from PDF")
+        cursor.setCharFormat(format)
 
     self.pdf_opened.emit(students)
 

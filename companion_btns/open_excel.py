@@ -11,7 +11,6 @@ def open_excel(self):
             workbook = xw.Book(excel_path)
             print(f"Opened Excel file: {excel_path}")
             print(f"Workbook has {len(workbook.sheets)} sheet(s)")
-            QMessageBox.information(self, "Success", f"Opened Excel file with {len(workbook.sheets)} sheet(s)")
 
             self.excel_opened.emit(workbook)
 

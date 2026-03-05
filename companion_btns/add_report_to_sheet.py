@@ -7,12 +7,10 @@ def add_report_to_sheet(window):
     # Check if we have both PDF data and Excel file
     if not window.students:
         QMessageBox.warning(window, "No PDF Data", "Please load a PDF file first")
-        window.status_box.append("No PDF data loaded")
         return
     
     if not window.workbook:
         QMessageBox.warning(window, "No Excel File", "Please open an Excel file first")
-        window.status_box.append("No Excel file opened")
         return
     
     try:
@@ -27,12 +25,7 @@ def add_report_to_sheet(window):
             "Enter date for this week's absences:",
             text=suggested_date
         )
-        
-        # If user cancel stop
-        if not ok or not label:
-            window.status_box.append("Operation cancelled by user")
-            return
-        
+
         # Find last column Outcome of Correspondence
         outcome_col = None
         for col in range(1, sheet.used_range.last_cell.column + 1):
@@ -61,7 +54,6 @@ def add_report_to_sheet(window):
         header_cell.color = (200, 200, 200) 
         
         print(f" ADDING TOTAL ABSENCES WITH MATCHING ")
-        window.status_box.append(f"Adding column: Total Absences - {label}")
         
         # Build lookup dictionaries from PDF students
         pdf_by_id = {}  # {student_id: student_object}
@@ -181,36 +173,27 @@ def add_report_to_sheet(window):
         print(f"Medium Risk (Yellow): {medium_risk_count}")
         print(f"Low Risk (Green): {low_risk_count}")
         print(f"Total rows processed: {last_row - 1}")
+
         
-        # Update status box
-        window.status_box.append(f"Successfully added Total Absences column")
-        window.status_box.append(f"   Matched by ID: {matched_by_id}")
-        window.status_box.append(f"   Matched by Name: {matched_by_name}")
-        window.status_box.append(f"   No match: {no_match}")
-        window.status_box.append(f"    High Risk: {high_risk_count}")
-        window.status_box.append(f"    Medium Risk: {medium_risk_count}")
-        window.status_box.append(f"    Low Risk: {low_risk_count}")
-        
-        # Show results to user
-        QMessageBox.information(
-            window, 
-            "Success", 
-            f"Added Total Absences column with color coding!\n\n"
-            f"Matched by Student ID: {matched_by_id}\n"
-            f"Matched by Name: {matched_by_name}\n"
-            f"No match found: {no_match}\n\n"
-            f" High Risk (40+ hrs): {high_risk_count}\n"
-            f" Medium Risk (21-39 hrs): {medium_risk_count}\n"
-            f" Low Risk (0-20 hrs): {low_risk_count}\n\n"
-            f"Total rows: {last_row - 1}"
-        )
+        # # Show results to user
+        # QMessageBox.information(
+        #     window,
+        #     "Success",
+        #     f"Added Total Absences column with color coding!\n\n"
+        #     f"Matched by Student ID: {matched_by_id}\n"
+        #     f"Matched by Name: {matched_by_name}\n"
+        #     f"No match found: {no_match}\n\n"
+        #     f" High Risk (40+ hrs): {high_risk_count}\n"
+        #     f" Medium Risk (21-39 hrs): {medium_risk_count}\n"
+        #     f" Low Risk (0-20 hrs): {low_risk_count}\n\n"
+        #     f"Total rows: {last_row - 1}"
+        # )
         
     except Exception as e:
         import traceback
         print(f"Error adding total absences: {e}")
         print(traceback.format_exc())
         QMessageBox.critical(window, "Error", f"Error adding total absences: {e}")
-        window.status_box.append(f" Error: {e}")
 
 
 def _col_letter(col_num):
