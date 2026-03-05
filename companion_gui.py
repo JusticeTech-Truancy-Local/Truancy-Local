@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy
+from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel
 from PyQt6.QtCore import pyqtSlot, pyqtSignal
 import xlwings as xw
 
@@ -51,6 +51,7 @@ class TruancyWindow(QMainWindow):
         center_layout.addWidget(excel_button, 1, 1, 1, 1)
         center_layout.addWidget(self.excel_check, 1, 0, 1, 1)
         center_layout.addWidget(self.add_absences_button, 2, 1, 1, 1)
+        center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
         center_layout.addWidget(self.status_box, 3, 0, 1, 2)
         
         center_widget = QWidget()

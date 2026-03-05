@@ -86,33 +86,31 @@ def add_report_to_sheet(window):
         
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
-            # Get Student ID from Excel (column Z/column 26)
-            excel_student_id = sheet.range(f'Z{row}').value
+            # Get Student ID from Excel (column C)
+            excel_student_id = sheet.range(f'C{row}').value
             
             # Get names from Excel
             excel_first_name = sheet.range(f'B{row}').value
             excel_last_name = sheet.range(f'A{row}').value
             
             matched_student = None
-            match_type = None
             
-            # Match by Student ID first
+            # Match by Student ID
             if excel_student_id:
-                excel_student_id_str = str(excel_student_id).strip()
+                excel_student_id_str = str(int(excel_student_id)).strip()
+                print(f"EXCEL ID {excel_student_id_str}")
                 if excel_student_id_str in pdf_by_id:
                     matched_student = pdf_by_id[excel_student_id_str]
-                    match_type = 'id'
+                    print(f"PDF ID {matched_student.id}")
                     print(f"Row {row}: Matched by ID {excel_student_id_str}")
             
-            # If no ID matches than by name
-            if not matched_student and excel_last_name and excel_first_name:
+            # Check if name matches just in case
+            if matched_student and excel_last_name and excel_first_name:
                 last = str(excel_last_name).strip().lower()
                 first = str(excel_first_name).strip().lower()
-                
-                if (last, first) in pdf_by_name:
-                    matched_student = pdf_by_name[(last, first)]
-                    match_type = 'name'
-                    print(f"Row {row}: Matched by name {first} {last}")
+
+                if pdf_by_name[(last, first)] and pdf_by_name[(last, first)] != matched_student:
+                    print(f"!!!! Student name mismatch: ID {excel_student_id} matches {matched_student.firstName} {matched_student.lastName} in Excel, {first} {last} in PDF")
             
             # Write Total Absences if matches are found
             if matched_student:
@@ -136,28 +134,14 @@ def add_report_to_sheet(window):
                             # Green for low risk (0-20 hours)
                             cell.color = (200, 255, 200)  # green
                             low_risk_count += 1
-                        
-                        # Track match type
-                        if match_type == 'id':
-                            matched_by_id += 1
-                        else:
-                            matched_by_name += 1
                             
                     except (ValueError, TypeError):
                         print(f"Warning: Could not convert absenceTotal: {matched_student.absenceTotal}")
                         # Invalid data
                         sheet.range(f'{_col_letter(insert_col)}{row}').value = "N/A"
-                        if match_type == 'id':
-                            matched_by_id += 1
-                        else:
-                            matched_by_name += 1
                 else:
                     # Student matched but has no absence data; no color
                     sheet.range(f'{_col_letter(insert_col)}{row}').value = 0
-                    if match_type == 'id':
-                        matched_by_id += 1
-                    else:
-                        matched_by_name += 1
             else:
                 # No match found; leave blank no value no color
                 print(f"Row {row}: No match found for {excel_first_name} {excel_last_name} (ID: {excel_student_id})")
@@ -166,8 +150,6 @@ def add_report_to_sheet(window):
         # Print summary
         total_matched = matched_by_id + matched_by_name
         print(f"\n=== SUMMARY ===")
-        print(f"Matched by Student ID: {matched_by_id}")
-        print(f"Matched by Name: {matched_by_name}")
         print(f"No match found: {no_match}")
         print(f"High Risk (Red): {high_risk_count}")
         print(f"Medium Risk (Yellow): {medium_risk_count}")
@@ -191,9 +173,9 @@ def add_report_to_sheet(window):
         
     except Exception as e:
         import traceback
-        print(f"Error adding total absences: {e}")
+        print(f"Error adding absences: {e}")
         print(traceback.format_exc())
-        QMessageBox.critical(window, "Error", f"Error adding total absences: {e}")
+        QMessageBox.critical(window, "Error", f"Error adding absences: {e}")
 
 
 def _col_letter(col_num):
