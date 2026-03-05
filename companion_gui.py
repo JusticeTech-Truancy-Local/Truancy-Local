@@ -74,10 +74,9 @@ class TruancyWindow(QMainWindow):
 
     def check_files_ready(self):
         has_students = bool(self.students)
+
         # Check if excel window currently exists; clear if the window has been closed
-        try:
-            _ = self.workbook.app.visible
-        except Exception:
+        if self.workbook and self.workbook.fullname not in [i.fullname for i in xw.books]:
            self.workbook = None
 
         has_workbook = bool(self.workbook)
