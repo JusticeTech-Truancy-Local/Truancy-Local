@@ -1,3 +1,4 @@
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
     QScrollArea
 from PyQt6.QtCore import pyqtSlot, pyqtSignal
@@ -25,6 +26,7 @@ class TruancyWindow(QMainWindow):
         # Associated with open_pdf
         pdf_button = QPushButton("Open Report PDF")
         pdf_button.clicked.connect(lambda: open_pdf(self))
+        pdf_button.setIcon(QIcon("assets/pdf.ico"))
         self.pdf_opened.connect(self.update_students)
         self.pdf_check = QCheckBox()
         self.pdf_check.setEnabled(False)
@@ -33,6 +35,7 @@ class TruancyWindow(QMainWindow):
         # Associated with open excel
         excel_button = QPushButton("Open Excel Sheet")
         excel_button.clicked.connect(lambda: open_excel(self))
+        excel_button.setIcon(QIcon("assets/excel.ico"))
         self.excel_opened.connect(self.update_workbook)
         self.excel_check = QCheckBox()
         self.excel_check.setEnabled(False)
