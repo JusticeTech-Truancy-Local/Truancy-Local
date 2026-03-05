@@ -5,9 +5,9 @@ from constructor import Student
 import subprocess
 
 
-def open_pdf(self):
+def open_pdf(window):
 
-    pdf_path = QFileDialog.getOpenFileName(self, "Open Truancy Report", "/home", "PDF (*.pdf)")[0]
+    pdf_path = QFileDialog.getOpenFileName(window, "Open Truancy Report", "/home", "PDF (*.pdf)")[0]
     if not pdf_path:
         return
 
@@ -26,7 +26,7 @@ def open_pdf(self):
             s.print()
 
         # Display loaded students and hours in the status box
-        cursor = self.status_box.textCursor()
+        cursor = window.status_box.textCursor()
         format = QTextCharFormat()
         for s in students:
             # Highlight students over unexcused threshold in red
@@ -36,6 +36,6 @@ def open_pdf(self):
             format.clearBackground()
         cursor.setCharFormat(format)
 
-    self.pdf_opened.emit(students)
+    window.pdf_opened.emit(students)
 
 

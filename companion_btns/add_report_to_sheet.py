@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from datetime import datetime
 
+from constructor import Student
+
 def add_report_to_sheet(window):
     """Add Total Absences column from PDF data to Excel file with ID/name matching and color coding"""
     
@@ -50,10 +52,10 @@ def add_report_to_sheet(window):
 
         # Add header with user's label
         header_cell = sheet.range(f'{_col_letter(insert_col)}1')
-        header_cell.value = f"Total Absences - {label}"
+        header_cell.value = f"{label} Unexcused Absences"
         header_cell.color = (200, 200, 200) 
         
-        print(f" ADDING TOTAL ABSENCES WITH MATCHING ")
+        print(f" ADDING ABSENCES WITH MATCHING ")
         
         # Build lookup dictionaries from PDF students
         pdf_by_id = {}  # {student_id: student_object}
@@ -77,12 +79,8 @@ def add_report_to_sheet(window):
         print(f"Excel has {last_row - 1} data rows (rows 2-{last_row})")
         
         # Track data
-        matched_by_id = 0
-        matched_by_name = 0
         no_match = 0
         high_risk_count = 0
-        medium_risk_count = 0
-        low_risk_count = 0
         
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
@@ -98,10 +96,8 @@ def add_report_to_sheet(window):
             # Match by Student ID
             if excel_student_id:
                 excel_student_id_str = str(int(excel_student_id)).strip()
-                print(f"EXCEL ID {excel_student_id_str}")
                 if excel_student_id_str in pdf_by_id:
                     matched_student = pdf_by_id[excel_student_id_str]
-                    print(f"PDF ID {matched_student.id}")
                     print(f"Row {row}: Matched by ID {excel_student_id_str}")
             
             # Check if name matches just in case
@@ -112,33 +108,24 @@ def add_report_to_sheet(window):
                 if pdf_by_name[(last, first)] and pdf_by_name[(last, first)] != matched_student:
                     print(f"!!!! Student name mismatch: ID {excel_student_id} matches {matched_student.firstName} {matched_student.lastName} in Excel, {first} {last} in PDF")
             
-            # Write Total Absences if matches are found
+            # Write Unexcused if matches are found
             if matched_student:
-                if matched_student.absenceTotal:
+                if matched_student.unexcused:
                     try:
-                        total_abs = float(matched_student.absenceTotal)
+                        unexcused = float(matched_student.unexcused)
                         cell = sheet.range(f'{_col_letter(insert_col)}{row}')
-                        cell.value = total_abs
+                        cell.value = unexcused
                         
                         # Color code based on absence hours
-                        if total_abs >= 40:
-                            # Red for high risk (40+ hours)
+                        if unexcused >= Student.redThreshold:
+                            # Red for high risk
                             cell.color = (255, 0, 0)  # Red
                             high_risk_count += 1
-                            # Ask Stacey if we should email parents automatically when student hits 40+ hours
-                        elif total_abs >= 21:
-                            # Yellow for medium risk (21-39 hours)
-                            cell.color = (255, 255, 200)  # yellow
-                            medium_risk_count += 1
-                        else:
-                            # Green for low risk (0-20 hours)
-                            cell.color = (200, 255, 200)  # green
-                            low_risk_count += 1
                             
                     except (ValueError, TypeError):
-                        print(f"Warning: Could not convert absenceTotal: {matched_student.absenceTotal}")
+                        print(f"Warning: Could not convert unexcused: {matched_student.unexcused}")
                         # Invalid data
-                        sheet.range(f'{_col_letter(insert_col)}{row}').value = "N/A"
+                        sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
                 else:
                     # Student matched but has no absence data; no color
                     sheet.range(f'{_col_letter(insert_col)}{row}').value = 0
@@ -148,12 +135,9 @@ def add_report_to_sheet(window):
                 no_match += 1
         
         # Print summary
-        total_matched = matched_by_id + matched_by_name
         print(f"\n=== SUMMARY ===")
         print(f"No match found: {no_match}")
         print(f"High Risk (Red): {high_risk_count}")
-        print(f"Medium Risk (Yellow): {medium_risk_count}")
-        print(f"Low Risk (Green): {low_risk_count}")
         print(f"Total rows processed: {last_row - 1}")
 
         
