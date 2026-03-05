@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from datetime import datetime
 
-def add_total_absences(window):
+def add_report_to_sheet(window):
     """Add Total Absences column from PDF data to Excel file with ID/name matching and color coding"""
     
     # Check if we have both PDF data and Excel file
