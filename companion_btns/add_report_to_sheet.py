@@ -29,6 +29,11 @@ def add_report_to_sheet(window):
             text=suggested_date
         )
 
+        # Update date in totals columns
+        sheet.range(f'I1').value = f"{label} Excused Absences"
+        sheet.range(f'J1').value = f"{label} Unexcused Absences"
+        sheet.range(f'K1').value = f"{label} Total Absences (minus suspension hours)"
+
         # Find last column Outcome of Correspondence
         outcome_col = None
         for col in range(1, sheet.used_range.last_cell.column + 1):
@@ -54,7 +59,6 @@ def add_report_to_sheet(window):
         # Add header with user's label
         header_cell = sheet.range(f'{_col_letter(insert_col)}1')
         header_cell.value = f"{label} Unexcused Absences"
-        header_cell.color = (200, 200, 200) 
         
         print(f" ADDING ABSENCES WITH MATCHING ")
         
@@ -107,13 +111,17 @@ def add_report_to_sheet(window):
                 first = str(excel_first_name).strip().lower()
 
                 if pdf_by_name[(last, first)] and pdf_by_name[(last, first)] != matched_student:
-                    print(f"!!!! Student name mismatch: ID {excel_student_id} matches {matched_student.firstName} {matched_student.lastName} in Excel, {first} {last} in PDF")
+                    print(f"!!! Student name mismatch: ID {excel_student_id} matches {matched_student.firstName} "
+                          f"{matched_student.lastName} in Excel, {first} {last} in PDF")
             
             # Write Unexcused if matches are found
             if matched_student:
                 if matched_student.unexcused:
                     try:
+                        excused = float(matched_student.excused)
                         unexcused = float(matched_student.unexcused)
+                        suspension = float(matched_student.suspension)
+                        total_no_suspension = float(matched_student.absenceTotal) - suspension
                         cell = sheet.range(f'{_col_letter(insert_col)}{row}')
                         cell.value = unexcused
                         
@@ -122,14 +130,25 @@ def add_report_to_sheet(window):
                             # Red for high risk
                             cell.color = (255, 0, 0)  # Red
                             high_risk_count += 1
+
+                        # Update totals columns
+                        sheet.range(f'H{row}').value = suspension
+                        sheet.range(f'I{row}').value = excused
+                        sheet.range(f'J{row}').value = unexcused
+                        # Check for mismatch with report's total and calculated total
+                        if str(excused + unexcused) != matched_student.absenceTotal:
+                            print(f"!!! Total hours mismatch for {matched_student.firstName} {matched_student.lastName}"
+                                  f": Excel says {excused + unexcused}, PDF says {matched_student.absenceTotal}")
+                        sheet.range(f'K{row}').value = total_no_suspension
+
                             
                     except (ValueError, TypeError):
-                        print(f"Warning: Could not convert unexcused: {matched_student.unexcused}")
+                        print(f"Warning: Could not convert an absence total")
                         # Invalid data
                         sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
                 else:
                     # Student matched but has no absence data; no color
-                    sheet.range(f'{_col_letter(insert_col)}{row}').value = 0
+                    sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
             else:
                 # No match found; leave blank no value no color
                 print(f"Row {row}: No match found for {excel_first_name} {excel_last_name} (ID: {excel_student_id})")
