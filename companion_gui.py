@@ -4,14 +4,14 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTex
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, Qt
 import xlwings as xw
 
-from companion_btns.open_pdf import open_pdf
+from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.add_report_to_sheet import add_report_to_sheet
 
 
 class TruancyWindow(QMainWindow):
 
-    pdf_opened = pyqtSignal(list)
+    pdf_opened = pyqtSignal(str, list)
     excel_opened = pyqtSignal(xw.Book)
 
     def __init__(self):
@@ -20,13 +20,18 @@ class TruancyWindow(QMainWindow):
         self.setWindowTitle("TruancyRecorder")
         
         # Store loaded students and workbook
+        self.pdf_path = ""
         self.students = []
         self.workbook = None
 
-        # Associated with open_pdf
-        pdf_button = QPushButton("Select Report PDF")
-        pdf_button.clicked.connect(lambda: open_pdf(self))
-        pdf_button.setIcon(QIcon("assets/pdf.ico"))
+        # Associated with select_pdf and open_pdf
+        select_pdf_button = QPushButton("Select Report PDF")
+        select_pdf_button.clicked.connect(lambda: select_pdf(self))
+        select_pdf_button.setIcon(QIcon("assets/pdf.ico"))
+        self.open_pdf_button = QPushButton()
+        self.open_pdf_button.clicked.connect(lambda: open_pdf(self))
+        self.open_pdf_button.setIcon(QIcon("assets/open.png"))
+        self.open_pdf_button.setFixedWidth(30)
         self.pdf_opened.connect(self.update_students)
         self.pdf_check = QCheckBox()
         self.pdf_check.setEnabled(False)
@@ -53,13 +58,14 @@ class TruancyWindow(QMainWindow):
         status_scroll.setWidgetResizable(True)
 
         center_layout = QGridLayout()
-        center_layout.addWidget(pdf_button, 0, 1, 1, 1)
         center_layout.addWidget(self.pdf_check, 0, 0, 1, 1)
-        center_layout.addWidget(excel_button, 1, 1, 1, 1)
+        center_layout.addWidget(select_pdf_button, 0, 1, 1, 1)
+        center_layout.addWidget(self.open_pdf_button, 0, 2, 1, 1)
         center_layout.addWidget(self.excel_check, 1, 0, 1, 1)
-        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 1)
+        center_layout.addWidget(excel_button, 1, 1, 1, 2)
         center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
-        center_layout.addWidget(status_scroll, 3, 0, 1, 2)
+        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 2)
+        center_layout.addWidget(status_scroll, 3, 0, 1, 3)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
@@ -71,8 +77,9 @@ class TruancyWindow(QMainWindow):
         self.check_files_ready()
 
 
-    @pyqtSlot(list)
-    def update_students(self, new_students):
+    @pyqtSlot(str, list)
+    def update_students(self, file_path, new_students):
+        self.pdf_path = file_path
         self.students = new_students
         self.check_files_ready()
 
@@ -96,5 +103,7 @@ class TruancyWindow(QMainWindow):
         self.excel_check.setChecked(has_workbook)
         # Grey out the add report to sheet button unless all data has been loaded
         self.add_absences_button.setEnabled(has_students and has_workbook)
+        # Grey out the open pdf in new window button unless a pdf has been selected
+        self.open_pdf_button.setEnabled(bool(self.pdf_path))
 
         return has_students and has_workbook

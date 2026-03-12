@@ -1,16 +1,13 @@
 from PyQt6.QtWidgets import QFileDialog
 from pdf_parser import extract_students_from_pdf
-# import subprocess
+import subprocess
 
 
-def open_pdf(window):
+def select_pdf(window):
 
     pdf_path = QFileDialog.getOpenFileName(window, "Open Truancy Report", "/home", "PDF (*.pdf)")[0]
     if not pdf_path:
         return
-
-    # # Open the PDF with system's default viewer
-    # subprocess.Popen([pdf_path], shell=True)
 
     students = extract_students_from_pdf(pdf_path)
 
@@ -23,6 +20,9 @@ def open_pdf(window):
         for s in students:
             s.print()
 
-    window.pdf_opened.emit(students)
+    window.pdf_opened.emit(pdf_path, students)
 
 
+def open_pdf(window):
+    # Open the PDF with system's default viewer
+    subprocess.Popen([window.pdf_path], shell=True)
