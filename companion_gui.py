@@ -24,7 +24,7 @@ class TruancyWindow(QMainWindow):
         self.workbook = None
 
         # Associated with open_pdf
-        pdf_button = QPushButton("Open Report PDF")
+        pdf_button = QPushButton("Select Report PDF")
         pdf_button.clicked.connect(lambda: open_pdf(self))
         pdf_button.setIcon(QIcon("assets/pdf.ico"))
         self.pdf_opened.connect(self.update_students)
@@ -33,7 +33,7 @@ class TruancyWindow(QMainWindow):
         self.pdf_check.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred))
 
         # Associated with open excel
-        excel_button = QPushButton("Open Excel Sheet")
+        excel_button = QPushButton("Connect to Excel")
         excel_button.clicked.connect(lambda: open_excel(self))
         excel_button.setIcon(QIcon("assets/excel.ico"))
         self.excel_opened.connect(self.update_workbook)

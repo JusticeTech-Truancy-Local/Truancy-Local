@@ -1,8 +1,6 @@
-from PyQt6.QtWidgets import QFileDialog, QMessageBox
-from PyQt6.QtGui import QTextCharFormat, QColor
+from PyQt6.QtWidgets import QFileDialog
 from pdf_parser import extract_students_from_pdf
-from constructor import Student
-import subprocess
+# import subprocess
 
 
 def open_pdf(window):
@@ -11,8 +9,8 @@ def open_pdf(window):
     if not pdf_path:
         return
 
-    # Open the PDF with system's default viewer
-    subprocess.Popen([pdf_path], shell=True)
+    # # Open the PDF with system's default viewer
+    # subprocess.Popen([pdf_path], shell=True)
 
     students = extract_students_from_pdf(pdf_path)
 
