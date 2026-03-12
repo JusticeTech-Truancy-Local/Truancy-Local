@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
     QScrollArea
-from PyQt6.QtCore import pyqtSlot, pyqtSignal
+from PyQt6.QtCore import pyqtSlot, pyqtSignal, Qt
 import xlwings as xw
 
 from companion_btns.open_pdf import open_pdf
@@ -64,6 +64,9 @@ class TruancyWindow(QMainWindow):
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
         self.setCentralWidget(center_widget)
+
+        # Keep window above all other windows
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
         self.check_files_ready()
 
