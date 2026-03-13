@@ -74,7 +74,7 @@ class TruancyWindow(QMainWindow):
         center_layout.addWidget(self.excel_path_bar, 1, 2, 1, 2)
         center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
         center_layout.addWidget(self.add_absences_button, 2, 1, 1, 3)
-        center_layout.addWidget(status_scroll, 3, 0, 1, 3)
+        center_layout.addWidget(status_scroll, 3, 1, 1, 3)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
