@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
-    QScrollArea
-from PyQt6.QtCore import pyqtSlot, pyqtSignal, Qt
+    QScrollArea, QLineEdit, QMessageBox
+from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt
 import xlwings as xw
 
 from companion_btns.open_pdf import select_pdf, open_pdf
@@ -18,6 +18,7 @@ class TruancyWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("TruancyRecorder")
+        self.settings = QSettings("TruancyApp", "TruancyRecorder")
         
         # Store loaded students and workbook
         self.pdf_path = ""
@@ -36,6 +37,9 @@ class TruancyWindow(QMainWindow):
         self.pdf_check = QCheckBox()
         self.pdf_check.setEnabled(False)
         self.pdf_check.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred))
+        self.pdf_path_bar = QLineEdit()
+        self.pdf_path_bar.setReadOnly(True)
+        self.pdf_path_bar.setPlaceholderText("No PDF loaded")
 
         # Associated with open excel
         excel_button = QPushButton("Connect to Excel")
@@ -45,6 +49,9 @@ class TruancyWindow(QMainWindow):
         self.excel_check = QCheckBox()
         self.excel_check.setEnabled(False)
         self.excel_check.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred))
+        self.excel_path_bar = QLineEdit()
+        self.excel_path_bar.setReadOnly(True)
+        self.excel_path_bar.setPlaceholderText("No Excel file selected")
         
         # Button to add report to sheet
         self.add_absences_button = QPushButton("Add Report to Sheet")
@@ -60,11 +67,13 @@ class TruancyWindow(QMainWindow):
         center_layout = QGridLayout()
         center_layout.addWidget(self.pdf_check, 0, 0, 1, 1)
         center_layout.addWidget(select_pdf_button, 0, 1, 1, 1)
-        center_layout.addWidget(self.open_pdf_button, 0, 2, 1, 1)
+        center_layout.addWidget(self.pdf_path_bar, 0, 2, 1, 1)
+        center_layout.addWidget(self.open_pdf_button, 0, 3, 1, 1)
         center_layout.addWidget(self.excel_check, 1, 0, 1, 1)
-        center_layout.addWidget(excel_button, 1, 1, 1, 2)
+        center_layout.addWidget(excel_button, 1, 1, 1, 1)
+        center_layout.addWidget(self.excel_path_bar, 1, 2, 1, 2)
         center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
-        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 2)
+        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 3)
         center_layout.addWidget(status_scroll, 3, 0, 1, 3)
         
         center_widget = QWidget()

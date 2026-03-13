@@ -1,13 +1,24 @@
+
 from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtCore import QSettings
+
 from pdf_parser import extract_students_from_pdf
 import subprocess
+import os
 
 
 def select_pdf(window):
 
-    pdf_path = QFileDialog.getOpenFileName(window, "Open Truancy Report", "/home", "PDF (*.pdf)")[0]
+    saved_pdf_dir = window.settings.value("pdf_dir", "/home")
+
+    pdf_path = QFileDialog.getOpenFileName(window, "Open Truancy Report", saved_pdf_dir, "PDF (*.pdf)")[0]
     if not pdf_path:
         return
+    
+    # Should be saved in registry
+    window.settings.setValue("pdf_dir", os.path.dirname(pdf_path))
+    window.settings.sync()
+    window.pdf_path_bar.setText(pdf_path)
 
     students = extract_students_from_pdf(pdf_path)
 
