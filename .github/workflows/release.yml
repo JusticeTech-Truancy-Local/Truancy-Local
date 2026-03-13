@@ -23,9 +23,9 @@ jobs:
         if: hashFiles('requirements.txt') != ''
 
       - name: Build executable
-        run: pyinstaller --onefile --name your-app main.py
+        run: pyinstaller --onefile --name Truancy-Local main.py
 
       - name: Upload to release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/Truancy-Local-v1.0.0.exe
+          files: dist/Truancy-Local.exe
