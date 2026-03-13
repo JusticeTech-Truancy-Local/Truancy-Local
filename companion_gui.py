@@ -7,6 +7,7 @@ import xlwings as xw
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.add_report_to_sheet import add_report_to_sheet
+import os
 
 
 class TruancyWindow(QMainWindow):
@@ -28,10 +29,10 @@ class TruancyWindow(QMainWindow):
         # Associated with select_pdf and open_pdf
         select_pdf_button = QPushButton("Select Report PDF")
         select_pdf_button.clicked.connect(lambda: select_pdf(self))
-        select_pdf_button.setIcon(QIcon("assets/pdf.ico"))
+        select_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/pdf.ico")))
         self.open_pdf_button = QPushButton()
         self.open_pdf_button.clicked.connect(lambda: open_pdf(self))
-        self.open_pdf_button.setIcon(QIcon("assets/open.png"))
+        self.open_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/open.png")))
         self.open_pdf_button.setFixedWidth(30)
         self.pdf_opened.connect(self.update_students)
         self.pdf_check = QCheckBox()
@@ -44,7 +45,7 @@ class TruancyWindow(QMainWindow):
         # Associated with open excel
         excel_button = QPushButton("Connect to Excel")
         excel_button.clicked.connect(lambda: open_excel(self))
-        excel_button.setIcon(QIcon("assets/excel.ico"))
+        excel_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/excel.ico")))
         self.excel_opened.connect(self.update_workbook)
         self.excel_check = QCheckBox()
         self.excel_check.setEnabled(False)
