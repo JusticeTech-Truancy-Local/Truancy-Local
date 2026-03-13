@@ -1,0 +1,31 @@
+name: Build Windows Executable
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyinstaller
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+        if: hashFiles('requirements.txt') != ''
+
+      - name: Build executable
+        run: pyinstaller --onefile --name your-app main.py
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/Truancy-Local-v1.0.0.exe
