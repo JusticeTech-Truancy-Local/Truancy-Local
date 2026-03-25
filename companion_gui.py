@@ -7,6 +7,7 @@ import xlwings as xw
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.add_report_to_sheet import add_report_to_sheet
+from difflib import SequenceMatcher
 import os
 
 
@@ -96,7 +97,7 @@ class TruancyWindow(QMainWindow):
         self.pdf_path = file_path
         self.students = new_students
         self.school_name = school_name
-        self.check_files_ready()
+        self.check_files_ready(did_update=True)
 
 
     @pyqtSlot(xw.Book)
@@ -107,9 +108,9 @@ class TruancyWindow(QMainWindow):
         if bool(self.workbook):
             self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
         self.sheets_combo.setEnabled(bool(self.workbook))
-        self.check_files_ready()
+        self.check_files_ready(did_update=True)
 
-    def check_files_ready(self):
+    def check_files_ready(self, did_update=False):
         has_students = bool(self.students)
 
         # Check if excel window currently exists; clear if the window has been closed
@@ -126,4 +127,18 @@ class TruancyWindow(QMainWindow):
         # Grey out the open pdf in new window button unless a pdf has been selected
         self.open_pdf_button.setEnabled(bool(self.pdf_path))
 
+        # Set dropdown to sheet that best matches school name
+        if did_update:
+            if has_workbook and has_students:
+                best_sheet = self.best_match(self.school_name, [x.name for x in self.workbook.sheets])
+                self.sheets_combo.setCurrentIndex(best_sheet + 1)
+
         return has_students and has_workbook
+
+    def best_match(self, name, options):
+        ## Returns best matching string in options, -1 if none match well
+        ratios = [SequenceMatcher(None, name.lower(), opt.lower()).ratio() for opt in options]
+        maxr = max(ratios)
+        if maxr > 0.5:
+            return ratios.index(maxr)
+        return -1
