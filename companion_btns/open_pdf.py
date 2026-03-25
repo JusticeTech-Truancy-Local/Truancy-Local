@@ -20,7 +20,9 @@ def select_pdf(window):
     window.settings.sync()
     window.pdf_path_bar.setText(pdf_path)
 
-    students = extract_students_from_pdf(pdf_path)
+    school_name, students = extract_students_from_pdf(pdf_path)
+
+    print("School Name:", school_name)
 
     if len(students) == 0:
         print("No students")
@@ -31,7 +33,7 @@ def select_pdf(window):
         for s in students:
             s.print()
 
-    window.pdf_opened.emit(pdf_path, students)
+    window.pdf_opened.emit(pdf_path, students, school_name)
 
 
 def open_pdf(window):

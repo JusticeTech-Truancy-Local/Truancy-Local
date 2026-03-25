@@ -13,6 +13,10 @@ def extract_students_from_pdf(pdf_path):
     attendance_pattern = re.compile(
         r'\d\d\d\d-\d\d\d\d\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
     )
+    school_pattern = re.compile(r'\D* \d\d\d\d-\d\d\d\d')
+
+    school_name = ""
+
     #open and process each page in the PDF
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
@@ -22,6 +26,12 @@ def extract_students_from_pdf(pdf_path):
                 continue
             lines = text.split("\n")
             for line in lines:
+                # set school name if this line contains it
+                school_match = re.match(school_pattern, line)
+                if school_match:
+                    assert not school_name or school_name == line
+                    school_name = line
+
                 # start of a new student block based on the # symbol
                 if "#" in line:
                     #if student was already being parsed, save it
@@ -63,4 +73,4 @@ def extract_students_from_pdf(pdf_path):
         if current_student:
             students.append(current_student)
 
-    return students
+    return school_name, students
