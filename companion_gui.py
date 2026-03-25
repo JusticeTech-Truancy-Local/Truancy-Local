@@ -34,6 +34,7 @@ class TruancyWindow(QMainWindow):
         self.open_pdf_button.clicked.connect(lambda: open_pdf(self))
         self.open_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/open.png")))
         self.open_pdf_button.setFixedWidth(30)
+        self.open_pdf_button.setFlat(True)
         self.pdf_opened.connect(self.update_students)
         self.pdf_check = QCheckBox()
         self.pdf_check.setEnabled(False)
