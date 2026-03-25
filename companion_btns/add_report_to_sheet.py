@@ -18,8 +18,13 @@ def add_report_to_sheet(window):
             return
     
     try:
-        # Get the active sheet
-        sheet = window.workbook.sheets.active
+        # Get the sheet matching the index in the dropdown
+        sheet_idx = window.sheets_combo.currentIndex() - 1
+        if sheet_idx < 0:
+            # Make new sheet
+            sheet = blank_sheet(window.workbook, window.school_name)
+        else:
+            sheet = window.workbook.sheets[sheet_idx]
         
         # Ask user for column header - today's date
         suggested_date = datetime.now().strftime("%m/%d/%Y")
@@ -181,6 +186,9 @@ def add_report_to_sheet(window):
         print(traceback.format_exc())
         QMessageBox.critical(window, "Error", f"Error adding absences: {e}")
 
+def blank_sheet(workbook, name):
+    sheet = workbook.sheets.add(name=name)
+    return sheet
 
 def add_student(sheet, student, column, row):
     history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data

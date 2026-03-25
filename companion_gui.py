@@ -102,6 +102,11 @@ class TruancyWindow(QMainWindow):
     @pyqtSlot(xw.Book)
     def update_workbook(self, new_workbook):
         self.workbook = new_workbook
+        # Update sheets in combo box
+        self.sheets_combo.clear()
+        if bool(self.workbook):
+            self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
+        self.sheets_combo.setEnabled(bool(self.workbook))
         self.check_files_ready()
 
     def check_files_ready(self):
@@ -118,11 +123,6 @@ class TruancyWindow(QMainWindow):
         self.excel_check.setChecked(has_workbook)
         # Grey out the add report to sheet button unless all data has been loaded
         self.add_absences_button.setEnabled(has_students and has_workbook)
-        # Update sheets in combo box if both files loaded
-        self.sheets_combo.clear()
-        if has_workbook and has_students:
-            self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
-        self.sheets_combo.setEnabled(has_students and has_workbook)
         # Grey out the open pdf in new window button unless a pdf has been selected
         self.open_pdf_button.setEnabled(bool(self.pdf_path))
 
