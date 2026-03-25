@@ -152,13 +152,15 @@ def add_report_to_sheet(window):
                 track_group(matched_student, history, groups)
 
             else:
-                # No match found; leave blank no value no color
+                # No match found; leave blank no value
                 print(f"Row {row}: No match found for {excel_first_name} {excel_last_name} (ID: {excel_student_id})")
                 no_match += 1
 
                 # Add "no data" to the new entry
                 sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
                 sheet.range(f'{_col_letter(insert_col + 1)}{row}').value = "no data"
+                sheet.range(f'{_col_letter(insert_col)}{row}').color = (217, 217, 217)
+                sheet.range(f'{_col_letter(insert_col + 1)}{row}').color = (217, 217, 217)
 
         # Suffixes to add to grade number. Matched by index in list
         grade_suffix = ["", "st", "nd", "rd", "th", "th", "th", "th", "th", "th", "th", "th", "th"]
@@ -259,11 +261,15 @@ def add_student(sheet, student, column, row, suspension_col):
             # Invalid data
             sheet.range(f'{_col_letter(column)}{row}').value = "no data"
             sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
+            sheet.range(f'{_col_letter(column)}{row}').color = (217, 217, 217)
+            sheet.range(f'{_col_letter(column + 1)}{row}').color = (217, 217, 217)
             history.append(None)
     else:
         # Student matched but has no absence data; no color
         sheet.range(f'{_col_letter(column)}{row}').value = "no data"
         sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
+        sheet.range(f'{_col_letter(column)}{row}').color = (217, 217, 217)
+        sheet.range(f'{_col_letter(column + 1)}{row}').color = (217, 217, 217)
         history.append(None)
 
     return history
