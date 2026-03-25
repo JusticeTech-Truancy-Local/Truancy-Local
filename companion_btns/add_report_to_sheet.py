@@ -1,4 +1,4 @@
-from PyQt6.QtGui import QTextCharFormat, QColor, QFont
+from PyQt6.QtGui import QTextCharFormat, QColor, QFont, QTextCursor
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
 from datetime import datetime
 
@@ -110,11 +110,11 @@ def add_report_to_sheet(window):
         
         # Track data
         no_match = 0
-        groups = {"2nd time over limit": [],
-                  "1st time over limit": [],
-                  "No longer over": [],
-                  "New students": [],
-                  "All students over limit": []}
+        groups = {-1: [],
+                  0: [],
+                  1: [],
+                  2: [],
+                  3: []}
         
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
@@ -280,17 +280,16 @@ def track_group(student, history, groups, is_new=False):
     updated_history = [False * (3 - len(history))] + [bool(x) for x in history]
 
     if is_new:
-        groups["New students"].append(student)
+        groups[0].append(student)
 
-    if updated_history[-1]:
-        groups["All students over limit"].append(student)
-        if updated_history[-2]:
-            if not updated_history[-3]:
-                groups["2nd time over limit"].append(student)
-        else:
-            groups["1st time over limit"].append(student)
+    count = 0
+    while updated_history[-1 - count] and count < len(history):
+        count += 1
+
+    if count > 0:
+        groups[count].append(student)
     elif updated_history[-2]:
-            groups["No longer over"].append(student)
+            groups[-1].append(student)
 
 
 def update_status_box(status_box, groups, label):
@@ -298,24 +297,51 @@ def update_status_box(status_box, groups, label):
     format = QTextCharFormat()
 
     format.setFontUnderline(True)
-    cursor.insertText(label, format)
+    cursor.insertText(label +"\n", format)
     format.setFontUnderline(False)
 
-    order = ["New students", "1st time over limit", "2nd time over limit", "No longer over", "All students over limit"]
-    highlight = {"2nd time over limit"}
+    cursor.insertTable(1 + len(groups[1]) + len(groups[2]) + len(groups[3]), 2)
 
-    for group in order:
-        format.setFontWeight(QFont.Weight.Bold)
-        cursor.insertText("\n"+group+"\n", format)
-        format.setFontWeight(QFont.Weight.Normal)
+    format.setFontWeight(QFont.Weight.Bold)
+    cursor.insertText("Student", format)
+    cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+    cursor.insertText(f"Back-to-back\nweeks\nover {Student.redThreshold} hrs", format)
+    format.setFontWeight(QFont.Weight.Normal)
+    cursor.movePosition(QTextCursor.MoveOperation.NextCell)
 
-        if group in highlight:
-            format.setBackground(QColor(255, 0, 0, 80))
+    for student in groups[1]:
+        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+        cursor.insertText(f"  🟥", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+    for student in groups[2]:
+        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+        cursor.insertText(f"  🟥🟥", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+    for student in groups[3]:
+        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+        cursor.insertText(f"  🟥🟥🟥...", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
 
-        for student in groups[group]:
-            cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
 
-        format.clearBackground()
+    cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+
+
+    format.setFontWeight(QFont.Weight.Bold)
+    cursor.insertText(f"\n\nDropped below {Student.redThreshold} hrs\n", format)
+    format.setFontWeight(QFont.Weight.Normal)
+    for student in groups[-1]:
+        cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
+
+    format.setFontWeight(QFont.Weight.Bold)
+    cursor.insertText(f"\nNew students\n", format)
+    format.setFontWeight(QFont.Weight.Normal)
+    for student in groups[0]:
+        cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
+
+    cursor.insertText("\n", format)
 
     cursor.setCharFormat(format)
 
