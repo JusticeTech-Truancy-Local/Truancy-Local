@@ -30,11 +30,6 @@ def add_report_to_sheet(window):
             text=suggested_date
         )
 
-        # Update date in totals columns
-        sheet.range(f'I1').value = f"{label} Excused Absences"
-        sheet.range(f'J1').value = f"{label} Unexcused Absences"
-        sheet.range(f'K1').value = f"{label} Total Absences (minus suspension hours)"
-
         # Find last column Outcome of Correspondence
         outcome_col = None
         for col in range(1, sheet.used_range.last_cell.column + 1):
@@ -47,10 +42,11 @@ def add_report_to_sheet(window):
         if outcome_col:
             insert_col = outcome_col  # Insert pushes existing column to the right
         else:
-            insert_col = 22  # Default to column V 
+            insert_col = sheet.used_range.last_cell.column + 1  # Default to final column
         
-        # Insert a new column
+        # Insert two new columns
         sheet.range(f'{_col_letter(insert_col)}:{_col_letter(insert_col)}').api.Insert()
+        sheet.range(f'{_col_letter(insert_col + 1)}:{_col_letter(insert_col + 1)}').api.Insert()
  
         # Find the last row by counting up to the last non-clear row
         last_row = sheet.used_range.last_cell.row
@@ -59,11 +55,14 @@ def add_report_to_sheet(window):
 
         # Clear all colors from the new column
         for row in range(2, last_row + 1):
-            sheet.range(f'{_col_letter(insert_col)}{row}').color = None 
+            sheet.range(f'{_col_letter(insert_col)}{row}').color = None
+            sheet.range(f'{_col_letter(insert_col + 1)}{row}').color = None
 
         # Add header with user's label
-        header_cell = sheet.range(f'{_col_letter(insert_col)}1')
-        header_cell.value = f"{label} Unexcused Absences"
+        header_cell_ex = sheet.range(f'{_col_letter(insert_col)}1')
+        header_cell_ex.value = f"{label} Excused Absences"
+        header_cell_unex = sheet.range(f'{_col_letter(insert_col + 1)}1')
+        header_cell_unex.value = f"{label} Unexcused Absences"
         
         print(f" ADDING ABSENCES WITH MATCHING ")
         
@@ -141,6 +140,7 @@ def add_report_to_sheet(window):
 
                 # Add "no data" to the new entry
                 sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
+                sheet.range(f'{_col_letter(insert_col + 1)}{row}').value = "no data"
 
         # Add new rows for unmatched students
         extra_row = last_row + 1
@@ -177,10 +177,11 @@ def add_student(sheet, student, column, row):
     history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data
 
     # March thru previous weeks to record history of being over the limit
-    for c in range(max(12, column-2), column):
-        val = sheet.range(f'{_col_letter(c)}{row}').value
+    for c in range(max(9, column-4), column, 2):
+        val_ex = sheet.range(f'{_col_letter(c)}{row}').value
+        val_unex = sheet.range(f'{_col_letter(c + 1)}{row}').value
         try:
-            val_int = int(val)
+            val_int = int(val_ex) + int(val_unex)
             history.append(val_int >= Student.redThreshold)
         except TypeError:
             history.append(None)
@@ -191,23 +192,24 @@ def add_student(sheet, student, column, row):
             unexcused = float(student.unexcused)
             suspension = float(student.suspension)
             total_no_suspension = float(student.absenceTotal) - suspension
-            cell = sheet.range(f'{_col_letter(column)}{row}')
-            cell.value = unexcused
+            cell_ex = sheet.range(f'{_col_letter(column)}{row}')
+            cell_ex.value = excused
+            cell_unex = sheet.range(f'{_col_letter(column + 1)}{row}')
+            cell_unex.value = unexcused
 
-            # Update totals columns
-            sheet.range(f'H{row}').value = suspension
-            sheet.range(f'I{row}').value = excused
-            sheet.range(f'J{row}').value = unexcused
             # Check for mismatch with report's total and calculated total
-            if str(excused + unexcused) != total_no_suspension:
+            if excused + unexcused != total_no_suspension:
                 print(f"!!! Total hours mismatch for {student.firstName} {student.lastName}"
                       f": Excel says {excused + unexcused}, PDF says {total_no_suspension}")
-            sheet.range(f'K{row}').value = total_no_suspension
+
+            # Update suspensions column
+            sheet.range(f'H{row}').value = suspension
 
             # Color code based on absence hours
-            if unexcused >= Student.redThreshold:
+            if unexcused + excused >= Student.redThreshold:
                 # Red for over limit
-                cell.color = (255, 0, 0)  # Red
+                cell_ex.color = (255, 0, 0)  # Red
+                cell_unex.color = (255, 0, 0)
                 history.append(True)
             else:
                 history.append(False)
@@ -216,10 +218,12 @@ def add_student(sheet, student, column, row):
             print(f"Warning: Could not convert an absence total")
             # Invalid data
             sheet.range(f'{_col_letter(column)}{row}').value = "no data"
+            sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
             history.append(None)
     else:
         # Student matched but has no absence data; no color
         sheet.range(f'{_col_letter(column)}{row}').value = "no data"
+        sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
         history.append(None)
 
     return history
