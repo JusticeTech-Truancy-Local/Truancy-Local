@@ -11,7 +11,7 @@ def extract_students_from_pdf(pdf_path):
     age_pattern = re.compile(r'Age:\s*(\d+)')
     grade_pattern = re.compile(r'Grade:\s*([A-Za-z0-9]+)')
     attendance_pattern = re.compile(
-        r'2024-2025\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
+        r'\d\d\d\d-\d\d\d\d\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
     )
     #open and process each page in the PDF
     with pdfplumber.open(pdf_path) as pdf:
