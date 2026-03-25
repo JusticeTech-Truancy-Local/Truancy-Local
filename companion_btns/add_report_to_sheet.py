@@ -142,6 +142,9 @@ def add_report_to_sheet(window):
                 sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
                 sheet.range(f'{_col_letter(insert_col + 1)}{row}').value = "no data"
 
+        # Suffixes to add to grade number. Matched by index in list
+        grade_suffix = ["", "st", "nd", "rd", "th", "th", "th", "th", "th", "th", "th", "th", "th"]
+
         # Add new rows for unmatched students
         extra_row = last_row + 1
         for student in unmatched:
@@ -150,11 +153,17 @@ def add_report_to_sheet(window):
             history = add_student(sheet, student, insert_col, extra_row)
             track_group(student, history, groups, True)
 
+            try:
+                gradenum = int(student.grade)
+                grade = str(gradenum) + grade_suffix[gradenum]
+            except TypeError:
+                grade = student.grade
+
             sheet.range(f'A{extra_row}').value = student.lastName
             sheet.range(f'B{extra_row}').value = student.firstName
             sheet.range(f'C{extra_row}').value = student.id
             sheet.range(f'D{extra_row}').value = student.age
-            sheet.range(f'E{extra_row}').value = student.grade
+            sheet.range(f'E{extra_row}').value = grade
 
             extra_row += 1
 
