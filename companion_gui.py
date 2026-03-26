@@ -1,6 +1,6 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
-    QScrollArea, QLineEdit, QMessageBox, QComboBox
+    QScrollArea, QLineEdit, QMessageBox, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt
 import xlwings as xw
 
@@ -40,9 +40,6 @@ class TruancyWindow(QMainWindow):
         self.open_pdf_button.setFixedWidth(30)
         self.open_pdf_button.setFlat(True)
         self.pdf_opened.connect(self.update_students)
-        self.pdf_check = QCheckBox()
-        self.pdf_check.setEnabled(False)
-        self.pdf_check.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred))
         self.pdf_path_bar = QLineEdit()
         self.pdf_path_bar.setReadOnly(True)
         self.pdf_path_bar.setPlaceholderText("No PDF loaded")
@@ -52,9 +49,6 @@ class TruancyWindow(QMainWindow):
         excel_button.clicked.connect(lambda: open_excel(self))
         excel_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/excel.ico")))
         self.excel_opened.connect(self.update_workbook)
-        self.excel_check = QCheckBox()
-        self.excel_check.setEnabled(False)
-        self.excel_check.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred))
         self.excel_path_bar = QLineEdit()
         self.excel_path_bar.setReadOnly(True)
         self.excel_path_bar.setPlaceholderText("No Excel file selected")
@@ -71,18 +65,23 @@ class TruancyWindow(QMainWindow):
         status_scroll.setWidget(self.status_box)
         status_scroll.setWidgetResizable(True)
 
-        center_layout = QGridLayout()
-        center_layout.addWidget(self.pdf_check, 0, 0, 1, 1)
-        center_layout.addWidget(select_pdf_button, 0, 1, 1, 1)
-        center_layout.addWidget(self.pdf_path_bar, 0, 2, 1, 1)
-        center_layout.addWidget(self.open_pdf_button, 0, 3, 1, 1)
-        center_layout.addWidget(self.excel_check, 1, 0, 1, 1)
-        center_layout.addWidget(excel_button, 1, 1, 1, 1)
-        center_layout.addWidget(self.excel_path_bar, 1, 2, 1, 2)
-        center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
-        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 1)
-        center_layout.addWidget(self.sheets_combo, 2, 2, 1, 2)
-        center_layout.addWidget(status_scroll, 3, 1, 1, 3)
+        center_layout = QVBoxLayout()
+
+        def contain_widgets(group_name, widgets):
+            # Encapsulates widgets in a named box
+            container = QGroupBox(group_name)
+            hlayout = QHBoxLayout()
+            for w in widgets:
+                hlayout.addWidget(w)
+            container.setLayout(hlayout)
+            return container
+
+        self.step_containers = [contain_widgets("1. ☐", [excel_button, self.excel_path_bar]),
+                                contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
+                                contain_widgets("3. ☐", [self.add_absences_button, self.sheets_combo])]
+        for sc in self.step_containers:
+            center_layout.addWidget(sc)
+        center_layout.addWidget(status_scroll)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
@@ -128,16 +127,18 @@ class TruancyWindow(QMainWindow):
 
         has_workbook = bool(self.workbook)
 
-        # Update checkboxes to show whether file is loaded
-        self.pdf_check.setChecked(has_students)
-        self.excel_check.setChecked(has_workbook)
         # Grey out the add report to sheet button unless all data has been loaded
         self.add_absences_button.setEnabled(has_students and has_workbook)
         # Grey out the open pdf in new window button unless a pdf has been selected
         self.open_pdf_button.setEnabled(bool(self.pdf_path))
 
+        # Set checkboxes for each step
+        self.step_containers[0].setTitle("1. " + ("☑" if has_workbook else "☐"))
+        self.step_containers[1].setTitle("2. " + ("☑" if has_students else "☐"))
+
         # Set dropdown to sheet that best matches school name
         if did_update:
+            self.step_containers[2].setTitle("3. ☐")
             if has_workbook and has_students:
                 best_sheet = self.best_match(self.school_name, [x.name for x in self.workbook.sheets])
                 self.sheets_combo.setCurrentIndex(best_sheet + 1)
