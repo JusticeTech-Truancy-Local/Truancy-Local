@@ -25,6 +25,7 @@ def add_report_to_sheet(window):
         if sheet_idx < 0:
             # Make new sheet
             sheet = blank_sheet(window.workbook, window.school_name)
+            window.check_files_ready(did_update=True) # Refresh dropdown with new sheet added
         else:
             sheet = window.workbook.sheets[sheet_idx]
 
@@ -49,14 +50,18 @@ def add_report_to_sheet(window):
         if not ok:
             return
 
-        sheet.select()
 
         # Insert data before last column
         if "Outcome of Correspondence" in column_locs:
             insert_col = column_locs["Outcome of Correspondence"]  # Insert pushes existing column to the right
         else:
             insert_col = sheet.used_range.last_cell.column + 1  # Default to final column
-        
+
+        # Move to the sheet before adding
+        window.go_to_cell(sheet.name, f'{_col_letter(insert_col)}1:{_col_letter(insert_col+1)}1')
+        # sheet.select()
+        # sheet.range(f'{_col_letter(insert_col)}1').select()
+
         # Insert two new columns
         sheet.range(f'{_col_letter(insert_col)}:{_col_letter(insert_col)}').api.Insert()
         sheet.range(f'{_col_letter(insert_col + 1)}:{_col_letter(insert_col + 1)}').api.Insert()
@@ -69,7 +74,6 @@ def add_report_to_sheet(window):
         last_row = sheet.used_range.last_cell.row
         while not sheet.range(f'A{last_row}').value:
             last_row -= 1
-
 
         # Add header with user's label
         header_cell_ex = sheet.range(f'{_col_letter(insert_col)}1')
@@ -149,7 +153,7 @@ def add_report_to_sheet(window):
                 unmatched.remove(matched_student)
 
                 history = add_student(sheet, matched_student, insert_col, row, column_locs["Suspension Hours"])
-                track_group(matched_student, history, groups)
+                track_group(matched_student, history, groups, row)
 
             else:
                 # No match found; leave blank no value
@@ -169,7 +173,7 @@ def add_report_to_sheet(window):
         extra_row = last_row + 1
         for student in unmatched:
             history = add_student(sheet, student, insert_col, extra_row, column_locs["Suspension Hours"])
-            track_group(student, history, groups, True)
+            track_group(student, history, groups, extra_row, True)
 
             try:
                 gradenum = int(student.grade)
@@ -191,7 +195,8 @@ def add_report_to_sheet(window):
         print(f"Total rows processed: {last_row - 1}")
 
         # Write results to status box
-        update_status_box(window.status_box, groups, label)
+        window.status_box.report_update(groups, label, Student.redThreshold, sheet.name,
+                                        (_col_letter(insert_col), _col_letter(insert_col + 1)))
         
     except Exception as e:
         import traceback
@@ -275,75 +280,21 @@ def add_student(sheet, student, column, row, suspension_col):
     return history
 
 
-def track_group(student, history, groups, is_new=False):
+def track_group(student, history, groups, row, is_new=False):
     # Add students to groups based on whether they were over limits the last three weeks
     updated_history = [False * (3 - len(history))] + [bool(x) for x in history]
 
     if is_new:
-        groups[0].append(student)
+        groups[0].append((student, row))
 
     count = 0
     while updated_history[-1 - count] and count < len(history):
         count += 1
 
     if count > 0:
-        groups[count].append(student)
+        groups[count].append((student, row))
     elif updated_history[-2]:
-            groups[-1].append(student)
-
-
-def update_status_box(status_box, groups, label):
-    cursor = status_box.textCursor()
-    format = QTextCharFormat()
-
-    format.setFontUnderline(True)
-    cursor.insertText(label +"\n", format)
-    format.setFontUnderline(False)
-
-    cursor.insertTable(1 + len(groups[1]) + len(groups[2]) + len(groups[3]), 2)
-
-    format.setFontWeight(QFont.Weight.Bold)
-    cursor.insertText("Student", format)
-    cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-    cursor.insertText(f"Back-to-back\nweeks\nover {Student.redThreshold} hrs", format)
-    format.setFontWeight(QFont.Weight.Normal)
-    cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-
-    for student in groups[1]:
-        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-        cursor.insertText(f"  🟥", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-    for student in groups[2]:
-        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-        cursor.insertText(f"  🟥🟥", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-    for student in groups[3]:
-        cursor.insertText(f" {student.lastName}, {student.firstName} ", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-        cursor.insertText(f"  🟥🟥🟥...", format)
-        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
-
-
-    cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
-
-
-    format.setFontWeight(QFont.Weight.Bold)
-    cursor.insertText(f"\n\nDropped below {Student.redThreshold} hrs\n", format)
-    format.setFontWeight(QFont.Weight.Normal)
-    for student in groups[-1]:
-        cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
-
-    format.setFontWeight(QFont.Weight.Bold)
-    cursor.insertText(f"\nNew students\n", format)
-    format.setFontWeight(QFont.Weight.Normal)
-    for student in groups[0]:
-        cursor.insertText(f"{student.lastName}, {student.firstName}\n", format)
-
-    cursor.insertText("\n", format)
-
-    cursor.setCharFormat(format)
+            groups[-1].append((student, row))
 
 
 def _col_letter(col_num):

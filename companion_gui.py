@@ -10,6 +10,8 @@ from companion_btns.add_report_to_sheet import add_report_to_sheet
 from difflib import SequenceMatcher
 import os
 
+from companion_btns.status_box import StatusBox
+
 
 class TruancyWindow(QMainWindow):
 
@@ -63,8 +65,8 @@ class TruancyWindow(QMainWindow):
         self.sheets_combo = QComboBox()
 
         # Text box to hold status messages for user
-        self.status_box = QTextEdit()
-        self.status_box.setReadOnly(True)
+        self.status_box = StatusBox()
+        self.status_box.go_to_cell.connect(self.go_to_cell)
         status_scroll = QScrollArea()
         status_scroll.setWidget(self.status_box)
         status_scroll.setWidgetResizable(True)
@@ -90,6 +92,13 @@ class TruancyWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
         self.check_files_ready()
+
+    @pyqtSlot(str, str)
+    def go_to_cell(self, sheet, address):
+        assert(self.workbook is not None)
+        self.workbook.activate(steal_focus=True)
+        self.workbook.sheets[sheet].select()
+        self.workbook.sheets[sheet].range(address).select()
 
 
     @pyqtSlot(str, list, str)
