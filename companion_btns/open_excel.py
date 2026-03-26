@@ -11,11 +11,12 @@ def open_excel(window):
     if excel_path:
         try:
             # Open the Excel file with xlwings
-            workbook = xw.Book(excel_path)
             window.excel_path_bar.setText(excel_path)
             window.settings.setValue("excel_path", excel_path)
             window.settings.setValue("excel_dir", os.path.dirname(excel_path))
             window.settings.sync()
+
+            workbook = xw.Book(excel_path)
 
             print(f"Opened Excel file: {excel_path}")
             print(f"Workbook has {len(workbook.sheets)} sheet(s)")

@@ -1,18 +1,21 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
-    QScrollArea, QLineEdit, QMessageBox
+    QScrollArea, QLineEdit, QMessageBox, QComboBox
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt
 import xlwings as xw
 
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.add_report_to_sheet import add_report_to_sheet
+from difflib import SequenceMatcher
 import os
+
+from companion_btns.status_box import StatusBox
 
 
 class TruancyWindow(QMainWindow):
 
-    pdf_opened = pyqtSignal(str, list)
+    pdf_opened = pyqtSignal(str, list, str)
     excel_opened = pyqtSignal(xw.Book)
 
     def __init__(self):
@@ -24,6 +27,7 @@ class TruancyWindow(QMainWindow):
         # Store loaded students and workbook
         self.pdf_path = ""
         self.students = []
+        self.school_name = ""
         self.workbook = None
 
         # Associated with select_pdf and open_pdf
@@ -34,6 +38,7 @@ class TruancyWindow(QMainWindow):
         self.open_pdf_button.clicked.connect(lambda: open_pdf(self))
         self.open_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/open.png")))
         self.open_pdf_button.setFixedWidth(30)
+        self.open_pdf_button.setFlat(True)
         self.pdf_opened.connect(self.update_students)
         self.pdf_check = QCheckBox()
         self.pdf_check.setEnabled(False)
@@ -57,10 +62,11 @@ class TruancyWindow(QMainWindow):
         # Button to add report to sheet
         self.add_absences_button = QPushButton("Add Report to Sheet")
         self.add_absences_button.clicked.connect(lambda: add_report_to_sheet(self))
+        self.sheets_combo = QComboBox()
 
         # Text box to hold status messages for user
-        self.status_box = QTextEdit()
-        self.status_box.setReadOnly(True)
+        self.status_box = StatusBox()
+        self.status_box.go_to_cell.connect(self.go_to_cell)
         status_scroll = QScrollArea()
         status_scroll.setWidget(self.status_box)
         status_scroll.setWidgetResizable(True)
@@ -74,7 +80,8 @@ class TruancyWindow(QMainWindow):
         center_layout.addWidget(excel_button, 1, 1, 1, 1)
         center_layout.addWidget(self.excel_path_bar, 1, 2, 1, 2)
         center_layout.addWidget(QLabel("⤷"), 2, 0, 1, 1)
-        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 3)
+        center_layout.addWidget(self.add_absences_button, 2, 1, 1, 1)
+        center_layout.addWidget(self.sheets_combo, 2, 2, 1, 2)
         center_layout.addWidget(status_scroll, 3, 1, 1, 3)
         
         center_widget = QWidget()
@@ -86,20 +93,33 @@ class TruancyWindow(QMainWindow):
 
         self.check_files_ready()
 
+    @pyqtSlot(str, str)
+    def go_to_cell(self, sheet, address):
+        assert(self.workbook is not None)
+        self.workbook.activate(steal_focus=True)
+        self.workbook.sheets[sheet].select()
+        self.workbook.sheets[sheet].range(address).select()
 
-    @pyqtSlot(str, list)
-    def update_students(self, file_path, new_students):
+
+    @pyqtSlot(str, list, str)
+    def update_students(self, file_path, new_students, school_name):
         self.pdf_path = file_path
         self.students = new_students
-        self.check_files_ready()
+        self.school_name = school_name
+        self.check_files_ready(did_update=True)
 
 
     @pyqtSlot(xw.Book)
     def update_workbook(self, new_workbook):
         self.workbook = new_workbook
-        self.check_files_ready()
+        # Update sheets in combo box
+        self.sheets_combo.clear()
+        if bool(self.workbook):
+            self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
+        self.sheets_combo.setEnabled(bool(self.workbook))
+        self.check_files_ready(did_update=True)
 
-    def check_files_ready(self):
+    def check_files_ready(self, did_update=False):
         has_students = bool(self.students)
 
         # Check if excel window currently exists; clear if the window has been closed
@@ -116,4 +136,18 @@ class TruancyWindow(QMainWindow):
         # Grey out the open pdf in new window button unless a pdf has been selected
         self.open_pdf_button.setEnabled(bool(self.pdf_path))
 
+        # Set dropdown to sheet that best matches school name
+        if did_update:
+            if has_workbook and has_students:
+                best_sheet = self.best_match(self.school_name, [x.name for x in self.workbook.sheets])
+                self.sheets_combo.setCurrentIndex(best_sheet + 1)
+
         return has_students and has_workbook
+
+    def best_match(self, name, options):
+        ## Returns best matching string in options, -1 if none match well
+        ratios = [SequenceMatcher(None, name.lower(), opt.lower()).ratio() for opt in options]
+        maxr = max(ratios)
+        if maxr > 0.5:
+            return ratios.index(maxr)
+        return -1
