@@ -33,7 +33,7 @@ class TruancyWindow(QMainWindow):
         # Associated with select_pdf and open_pdf
         select_pdf_button = QPushButton("Select Report PDF")
         select_pdf_button.clicked.connect(lambda: select_pdf(self))
-        select_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/pdf.ico")))
+        select_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/pdf.png")))
         self.open_pdf_button = QPushButton()
         self.open_pdf_button.clicked.connect(lambda: open_pdf(self))
         self.open_pdf_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/open.png")))
@@ -47,7 +47,7 @@ class TruancyWindow(QMainWindow):
         # Associated with open excel
         excel_button = QPushButton("Connect to Excel")
         excel_button.clicked.connect(lambda: open_excel(self))
-        excel_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/excel.ico")))
+        excel_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/excel.png")))
         self.excel_opened.connect(self.update_workbook)
         self.excel_path_bar = QLineEdit()
         self.excel_path_bar.setReadOnly(True)
