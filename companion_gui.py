@@ -114,9 +114,7 @@ class TruancyWindow(QMainWindow):
     def update_workbook(self, new_workbook):
         self.workbook = new_workbook
         # Update sheets in combo box
-        self.sheets_combo.clear()
-        if bool(self.workbook):
-            self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
+        self.update_sheet_selector()
         self.check_files_ready(did_update=True)
 
     def check_files_ready(self, did_update=False):
@@ -153,3 +151,8 @@ class TruancyWindow(QMainWindow):
         if maxr > 0.5:
             return ratios.index(maxr)
         return -1
+
+    def update_sheet_selector(self):
+        self.sheets_combo.clear()
+        if bool(self.workbook):
+            self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])

@@ -25,7 +25,7 @@ def add_report_to_sheet(window):
             sheet = blank_sheet(window.workbook, window.school_name)
             window.check_files_ready(did_update=True) # Refresh dropdown with new sheet added
         else:
-            sheet = window.workbook.sheets[sheet_idx]
+            sheet = window.workbook.sheets[window.sheets_combo.currentText()]
 
         # Find locations of all columns
         column_locs = {}
