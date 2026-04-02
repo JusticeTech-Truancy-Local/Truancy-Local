@@ -32,6 +32,7 @@ class StatusBox(QTextEdit):
 
     def report_update(self, groups, label, threshold, sheet, insert_cols):
         cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         format = QTextCharFormat()
 
         format.setFontUnderline(True)
@@ -90,5 +91,6 @@ class StatusBox(QTextEdit):
         format.setForeground(QColor('blue'))
         cursor.insertText(f"{student.lastName}, {student.firstName}", format)
         format.setAnchor(False)
+        format.setAnchorHref(None)
         format.setForeground(QColor('black'))
         format.setFontUnderline(False)
