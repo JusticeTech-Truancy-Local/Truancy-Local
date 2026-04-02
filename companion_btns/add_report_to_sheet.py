@@ -208,7 +208,8 @@ def add_report_to_sheet(window):
 
 def blank_sheet(workbook, name):
     # Create new sheet
-    sheet = workbook.sheets.add(name=name)
+    shortname = name if len(name) < 32 else name[:30] + "…"
+    sheet = workbook.sheets.add(name=shortname)
 
     sheet.range('A2').value = ""
     # Add base headings to sheet
