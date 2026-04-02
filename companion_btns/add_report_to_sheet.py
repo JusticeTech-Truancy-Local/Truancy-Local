@@ -1,8 +1,12 @@
+from datetime import datetime
+
 from PyQt6.QtWidgets import QMessageBox
 
 from constructor import Student
 
-BASE_HEADINGS = ["Last Name", "First Name", "Student #", "Age", "Grade", "Custodian", "Address", "Suspension Hours", "Outcome of Correspondence"]
+BASE_HEADINGS = ["Last Name", "First Name", "Student #", "Age", "Grade", "Custodian", "Address", "Phone/Email",
+                 "Suspension Hours", "Outcome of Correspondence",
+                 "Date Preliminary Letter Sent", "Date Mediation Letter Sent",	"Mediation Date/Time"]
 
 def add_report_to_sheet(window):
     """Add Total Absences column from PDF data to Excel file with ID/name matching and color coding"""
@@ -147,7 +151,24 @@ def add_report_to_sheet(window):
                 unmatched.remove(matched_student)
 
                 history = add_student(sheet, matched_student, insert_col, row, column_locs["Suspension Hours"])
-                track_group(matched_student, history, groups, row)
+
+                # Add strings from the letter status columns
+                prelim = sheet.range(f'{_col_letter(column_locs["Date Preliminary Letter Sent"])}{row}').value
+                if prelim is None:
+                    prelim = ""
+                elif isinstance(prelim, datetime):
+                    prelim = prelim.strftime('%m/%d/%Y')
+                else:
+                    prelim = str(prelim)
+                mediation = sheet.range(f'{_col_letter(column_locs["Date Mediation Letter Sent"])}{row}').value
+                if mediation is None:
+                    mediation = ""
+                elif isinstance(mediation, datetime):
+                    mediation = mediation.strftime('%m/%d/%Y')
+                else:
+                    mediation = str(mediation)
+
+                track_group(matched_student, history, groups, row, letters=(prelim, mediation))
 
             else:
                 # No match found; leave blank no value
@@ -177,7 +198,7 @@ def add_report_to_sheet(window):
             sheet.range(f"{insert_row}:{insert_row}").color = None
 
             history = add_student(sheet, student, insert_col, insert_row, column_locs["Suspension Hours"])
-            track_group(student, history, groups, insert_row, True)
+            track_group(student, history, groups, insert_row, is_new=True)
 
             try:
                 gradenum = int(student.grade)
@@ -229,7 +250,7 @@ def add_student(sheet, student, column, row, suspension_col):
     history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data
 
     # March thru previous weeks to record history of being over the limit
-    for c in range(max(9, column-4), column, 2):
+    for c in range(max(suspension_col + 1, column-4), column, 2):
         val_ex = sheet.range(f'{_col_letter(c)}{row}').value
         val_unex = sheet.range(f'{_col_letter(c + 1)}{row}').value
         try:
@@ -286,21 +307,23 @@ def add_student(sheet, student, column, row, suspension_col):
     return history
 
 
-def track_group(student, history, groups, row, is_new=False):
+def track_group(student, history, groups, row, letters=("", ""), is_new=False):
     # Add students to groups based on whether they were over limits the last three weeks
     updated_history = [False * (3 - len(history))] + [bool(x) for x in history]
 
+    student_data = (student, row, letters[0], letters[1])
+
     if is_new:
-        groups[0].append((student, row))
+        groups[0].append(student_data)
 
     count = 0
     while updated_history[-1 - count] and count < len(history):
         count += 1
 
     if count > 0:
-        groups[count].append((student, row))
+        groups[count].append(student_data)
     elif updated_history[-2]:
-            groups[-1].append((student, row))
+            groups[-1].append(student_data)
 
 
 def _col_letter(col_num):
