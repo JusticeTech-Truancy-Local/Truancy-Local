@@ -19,6 +19,7 @@ def select_pdf(window):
     window.settings.setValue("pdf_dir", os.path.dirname(pdf_path))
     window.settings.sync()
     window.pdf_path_bar.setText(pdf_path)
+    window.pdf_path_bar.repaint()
 
     school_name, students = extract_students_from_pdf(pdf_path)
 

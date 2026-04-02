@@ -11,10 +11,11 @@ def open_excel(window):
     if excel_path:
         try:
             # Open the Excel file with xlwings
-            window.excel_path_bar.setText(excel_path)
             window.settings.setValue("excel_path", excel_path)
             window.settings.setValue("excel_dir", os.path.dirname(excel_path))
             window.settings.sync()
+            window.excel_path_bar.setText(excel_path)
+            window.excel_path_bar.repaint()
 
             workbook = xw.Book(excel_path)
 
