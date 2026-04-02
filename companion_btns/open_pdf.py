@@ -19,8 +19,9 @@ def select_pdf(window):
     window.settings.setValue("pdf_dir", os.path.dirname(pdf_path))
     window.settings.sync()
     window.pdf_path_bar.setText(pdf_path)
+    window.pdf_path_bar.repaint() # Manual repaint so box is filled before PDF is parsed
 
-    school_name, students = extract_students_from_pdf(pdf_path)
+    school_name, generated_date, students = extract_students_from_pdf(pdf_path)
 
     print("School Name:", school_name)
 
@@ -33,7 +34,7 @@ def select_pdf(window):
         for s in students:
             s.print()
 
-    window.pdf_opened.emit(pdf_path, students, school_name)
+    window.pdf_opened.emit(pdf_path, students, school_name, generated_date)
 
 
 def open_pdf(window):

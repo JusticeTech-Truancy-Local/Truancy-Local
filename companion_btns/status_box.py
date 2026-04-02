@@ -32,18 +32,23 @@ class StatusBox(QTextEdit):
 
     def report_update(self, groups, label, threshold, sheet, insert_cols):
         cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.Start)
         format = QTextCharFormat()
 
         format.setFontUnderline(True)
         cursor.insertText(label + "\n", format)
         format.setFontUnderline(False)
 
-        cursor.insertTable(1 + len(groups[1]) + len(groups[2]) + len(groups[3]), 2)
+        cursor.insertTable(1 + len(groups[1]) + len(groups[2]) + len(groups[3]), 4)
 
         format.setFontWeight(QFont.Weight.Bold)
         cursor.insertText("Student", format)
         cursor.movePosition(QTextCursor.MoveOperation.NextCell)
         cursor.insertText(f"Consecutive\nweeks\nover {threshold} hrs", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+        cursor.insertText(f"Prelim\nLetter", format)
+        cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+        cursor.insertText(f"Mediation\nLetter", format)
         format.setFontWeight(QFont.Weight.Normal)
         cursor.movePosition(QTextCursor.MoveOperation.NextCell)
 
@@ -52,15 +57,27 @@ class StatusBox(QTextEdit):
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
             cursor.insertText(f" 1\t🟥", format)
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[2], format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[3], format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
         for student in groups[2]:
             self.write_student(student[0], format, cursor, sheet, student[1], insert_cols)
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
             cursor.insertText(f" 2\t🟥🟥", format)
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[2], format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[3], format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
         for student in groups[3]:
             self.write_student(student[0], format, cursor, sheet, student[1], insert_cols)
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
             cursor.insertText(f" 3+\t🟥🟥🟥...", format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[2], format)
+            cursor.movePosition(QTextCursor.MoveOperation.NextCell)
+            cursor.insertText(student[3], format)
             cursor.movePosition(QTextCursor.MoveOperation.NextCell)
 
         cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
@@ -90,5 +107,6 @@ class StatusBox(QTextEdit):
         format.setForeground(QColor('blue'))
         cursor.insertText(f"{student.lastName}, {student.firstName}", format)
         format.setAnchor(False)
+        format.setAnchorHref(None)
         format.setForeground(QColor('black'))
         format.setFontUnderline(False)
