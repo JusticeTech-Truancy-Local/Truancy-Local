@@ -34,7 +34,7 @@ def add_report_to_sheet(window):
         # Find locations of all columns
         column_locs = {}
         for i, col in enumerate(range(1, sheet.used_range.last_cell.column + 1)):
-            header_value = sheet.range(f'{_col_letter(col)}1').value
+            header_value = sheet.range((1, col)).value
             if header_value in BASE_HEADINGS:
                 column_locs[header_value] = i + 1
         for header in BASE_HEADINGS:
@@ -56,7 +56,7 @@ def add_report_to_sheet(window):
             insert_col = sheet.used_range.last_cell.column + 1  # Default to final column
 
         # Move to the sheet before adding
-        window.go_to_cell(sheet.name, f'{_col_letter(insert_col)}1:{_col_letter(insert_col+1)}1')
+        window.go_to_cell(sheet.name, f'{_col_letter(insert_col)}1:{_col_letter(insert_col + 1)}1')
         # sheet.select()
         # sheet.range(f'{_col_letter(insert_col)}1').select()
 
@@ -70,19 +70,19 @@ def add_report_to_sheet(window):
  
         # Find the last row by counting up to the last non-clear row
         last_row = sheet.used_range.last_cell.row
-        while not sheet.range(f'A{last_row}').value:
+        while not sheet.range((last_row, 1)).value:
             last_row -= 1
 
         # Add header with user's label
-        header_cell_ex = sheet.range(f'{_col_letter(insert_col)}1')
+        header_cell_ex = sheet.range((1, insert_col))
         header_cell_ex.value = f"{label} Excused Absences"
-        header_cell_unex = sheet.range(f'{_col_letter(insert_col + 1)}1')
+        header_cell_unex = sheet.range((1, insert_col + 1))
         header_cell_unex.value = f"{label} Unexcused Absences"
 
         # Clear all colors from the new column
         for row in range(1, last_row + 1):
-            sheet.range(f'{_col_letter(insert_col)}{row}').color = None
-            sheet.range(f'{_col_letter(insert_col + 1)}{row}').color = None
+            sheet.range((row, insert_col)).color = None
+            sheet.range((row, insert_col + 1)).color = None
         
         print(f" ADDING ABSENCES WITH MATCHING ")
         
@@ -121,11 +121,11 @@ def add_report_to_sheet(window):
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
             # Get Student ID from Excel
-            excel_student_id = sheet.range(f'{_col_letter(column_locs["Student #"])}{row}').value
+            excel_student_id = sheet.range((row, column_locs["Student #"])).value
             
             # Get names from Excel
-            excel_first_name = sheet.range(f'{_col_letter(column_locs["First Name"])}{row}').value
-            excel_last_name = sheet.range(f'{_col_letter(column_locs["Last Name"])}{row}').value
+            excel_first_name = sheet.range((row, column_locs["First Name"])).value
+            excel_last_name = sheet.range((row, column_locs["Last Name"])).value
             
             matched_student = None
             
@@ -153,14 +153,14 @@ def add_report_to_sheet(window):
                 history = add_student(sheet, matched_student, insert_col, row, column_locs["Suspension Hours"])
 
                 # Add strings from the letter status columns
-                prelim = sheet.range(f'{_col_letter(column_locs["Date Preliminary Letter Sent"])}{row}').value
+                prelim = sheet.range((row, column_locs["Date Preliminary Letter Sent"])).value
                 if prelim is None:
                     prelim = ""
                 elif isinstance(prelim, datetime):
                     prelim = prelim.strftime('%m/%d/%Y')
                 else:
                     prelim = str(prelim)
-                mediation = sheet.range(f'{_col_letter(column_locs["Date Mediation Letter Sent"])}{row}').value
+                mediation = sheet.range((row, column_locs["Date Mediation Letter Sent"])).value
                 if mediation is None:
                     mediation = ""
                 elif isinstance(mediation, datetime):
@@ -176,10 +176,10 @@ def add_report_to_sheet(window):
                 no_match += 1
 
                 # Add "no data" to the new entry
-                sheet.range(f'{_col_letter(insert_col)}{row}').value = "no data"
-                sheet.range(f'{_col_letter(insert_col + 1)}{row}').value = "no data"
-                sheet.range(f'{_col_letter(insert_col)}{row}').color = (217, 217, 217)
-                sheet.range(f'{_col_letter(insert_col + 1)}{row}').color = (217, 217, 217)
+                sheet.range((row, insert_col)).value = "no data"
+                sheet.range((row, insert_col + 1)).value = "no data"
+                sheet.range((row, insert_col)).color = (217, 217, 217)
+                sheet.range((row, insert_col + 1)).color = (217, 217, 217)
 
         # Suffixes to add to grade number. Matched by index in list
         grade_suffix = ["", "st", "nd", "rd", "th", "th", "th", "th", "th", "th", "th", "th", "th"]
@@ -190,7 +190,7 @@ def add_report_to_sheet(window):
             cont = True
             while cont:
                 insert_row += 1
-                currname = sheet.range(f'{_col_letter(column_locs["Last Name"])}{insert_row}').value
+                currname = sheet.range((insert_row, column_locs["Last Name"])).value
                 cont = bool(currname) and student.lastName > currname
 
 
@@ -206,11 +206,11 @@ def add_report_to_sheet(window):
             except TypeError:
                 grade = student.grade
 
-            sheet.range(f'{_col_letter(column_locs["Last Name"])}{insert_row}').value = student.lastName
-            sheet.range(f'{_col_letter(column_locs["First Name"])}{insert_row}').value = student.firstName
-            sheet.range(f'{_col_letter(column_locs["Student #"])}{insert_row}').value = student.id
-            sheet.range(f'{_col_letter(column_locs["Age"])}{insert_row}').value = student.age
-            sheet.range(f'{_col_letter(column_locs["Grade"])}{insert_row}').value = grade
+            sheet.range((insert_row, column_locs["Last Name"])).value = student.lastName
+            sheet.range((insert_row, column_locs["First Name"])).value = student.firstName
+            sheet.range((insert_row, column_locs["Student #"])).value = student.id
+            sheet.range((insert_row, column_locs["Age"])).value = student.age
+            sheet.range((insert_row, column_locs["Grade"])).value = grade
 
 
         # Print summary
@@ -238,11 +238,11 @@ def blank_sheet(workbook, name):
     sheet.range('A2').value = ""
     # Add base headings to sheet
     for i, heading in enumerate(BASE_HEADINGS):
-        sheet.range(f'{_col_letter(i + 1)}1').value = heading
-        sheet.range(f'{_col_letter(i + 1)}1').font.bold = True
+        sheet.range((1, i + 1)).value = heading
+        sheet.range((1, i + 1)).font.bold = True
 
     suspension_idx = BASE_HEADINGS.index("Suspension Hours") + 1
-    sheet.range(f'{_col_letter(suspension_idx)}1').color = (255, 255, 0)
+    sheet.range((1, suspension_idx)).color = (255, 255, 0)
 
     return sheet
 
@@ -251,8 +251,8 @@ def add_student(sheet, student, column, row, suspension_col):
 
     # March thru previous weeks to record history of being over the limit
     for c in range(max(suspension_col + 1, column-4), column, 2):
-        val_ex = sheet.range(f'{_col_letter(c)}{row}').value
-        val_unex = sheet.range(f'{_col_letter(c + 1)}{row}').value
+        val_ex = sheet.range((row, c)).value
+        val_unex = sheet.range((row, c + 1)).value
         try:
             val_int = int(val_ex) + int(val_unex)
             history.append(val_int >= Student.redThreshold)
@@ -265,9 +265,9 @@ def add_student(sheet, student, column, row, suspension_col):
             unexcused = float(student.unexcused)
             suspension = float(student.suspension)
             total_no_suspension = float(student.absenceTotal) - suspension
-            cell_ex = sheet.range(f'{_col_letter(column)}{row}')
+            cell_ex = sheet.range((row, column))
             cell_ex.value = excused
-            cell_unex = sheet.range(f'{_col_letter(column + 1)}{row}')
+            cell_unex = sheet.range((row, column + 1))
             cell_unex.value = unexcused
 
             # Check for mismatch with report's total and calculated total
@@ -276,8 +276,8 @@ def add_student(sheet, student, column, row, suspension_col):
                       f": Excel says {excused + unexcused}, PDF says {total_no_suspension}")
 
             # Update suspensions column
-            sheet.range(f'{_col_letter(suspension_col)}{row}').value = suspension
-            sheet.range(f'{_col_letter(suspension_col)}{row}').color = (255, 255, 0)
+            sheet.range((row, suspension_col)).value = suspension
+            sheet.range((row, suspension_col)).color = (255, 255, 0)
 
             # Color code based on absence hours
             if unexcused + excused >= Student.redThreshold:
@@ -291,17 +291,17 @@ def add_student(sheet, student, column, row, suspension_col):
         except (ValueError, TypeError):
             print(f"Warning: Could not convert an absence total")
             # Invalid data
-            sheet.range(f'{_col_letter(column)}{row}').value = "no data"
-            sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
-            sheet.range(f'{_col_letter(column)}{row}').color = (217, 217, 217)
-            sheet.range(f'{_col_letter(column + 1)}{row}').color = (217, 217, 217)
+            sheet.range((row, column)).value = "no data"
+            sheet.range((row, column + 1)).value = "no data"
+            sheet.range((row, column)).color = (217, 217, 217)
+            sheet.range((row, column + 1)).color = (217, 217, 217)
             history.append(None)
     else:
         # Student matched but has no absence data; no color
-        sheet.range(f'{_col_letter(column)}{row}').value = "no data"
-        sheet.range(f'{_col_letter(column + 1)}{row}').value = "no data"
-        sheet.range(f'{_col_letter(column)}{row}').color = (217, 217, 217)
-        sheet.range(f'{_col_letter(column + 1)}{row}').color = (217, 217, 217)
+        sheet.range((row, column)).value = "no data"
+        sheet.range((row, column + 1)).value = "no data"
+        sheet.range((row, column)).color = (217, 217, 217)
+        sheet.range((row, column + 1)).color = (217, 217, 217)
         history.append(None)
 
     return history

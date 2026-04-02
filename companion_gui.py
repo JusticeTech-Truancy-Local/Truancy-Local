@@ -22,6 +22,7 @@ class TruancyWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("TruancyRecorder")
+        self.setMinimumWidth(375)
         self.settings = QSettings("TruancyApp", "TruancyRecorder")
         
         # Store loaded students and workbook
@@ -29,6 +30,7 @@ class TruancyWindow(QMainWindow):
         self.students = []
         self.school_name = ""
         self.workbook = None
+
 
         # Associated with select_pdf and open_pdf
         select_pdf_button = QPushButton("Select Report PDF")
@@ -58,6 +60,7 @@ class TruancyWindow(QMainWindow):
         self.add_absences_button.clicked.connect(lambda: add_report_to_sheet(self))
         self.sheets_combo = QComboBox()
         self.date_select = QDateEdit()
+        self.date_select.setMaximumWidth(80)
 
         # Text box to hold status messages for user
         self.status_box = StatusBox()

@@ -32,7 +32,7 @@ class StatusBox(QTextEdit):
 
     def report_update(self, groups, label, threshold, sheet, insert_cols):
         cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.movePosition(QTextCursor.MoveOperation.Start)
         format = QTextCharFormat()
 
         format.setFontUnderline(True)
