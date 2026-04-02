@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMessageBox, QInputDialog
+from PyQt6.QtWidgets import QMessageBox
 
 from constructor import Student
 
@@ -36,20 +36,14 @@ def add_report_to_sheet(window):
         for header in BASE_HEADINGS:
             assert(header in column_locs)
 
-        # # Ask user for column header - today's date
-        # suggested_date = datetime.now().strftime("%m/%d/%Y")
-        # label, ok = QInputDialog.getText(
-        #     window,
-        #     "Column Label",
-        #     "Enter date for this week's absences:",
-        #     text=suggested_date
-        # )
-        # # Don't add data if user pressed cancel
-        # if not ok:
-        #     return
-
+        # Set date based on selector
         label = window.date_select.date().toString("MM/dd/yyyy")
 
+        # Ask user for confirmation about going through with adding data
+        confirm = QMessageBox.information(window, "Adding data to sheet", f"Adding column {label} to\n{sheet.name}\nContinue?",
+                                      QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+        if confirm == QMessageBox.StandardButton.Cancel:
+            return
 
         # Insert data before last column
         if "Outcome of Correspondence" in column_locs:
