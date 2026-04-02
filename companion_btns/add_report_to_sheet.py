@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox, QInputDialog
 
 from constructor import Student
 
@@ -31,23 +31,38 @@ def add_report_to_sheet(window):
         else:
             sheet = window.workbook.sheets[window.sheets_combo.currentText()]
 
-        # Find locations of all columns
-        column_locs = {}
-        for i, col in enumerate(range(1, sheet.used_range.last_cell.column + 1)):
-            header_value = sheet.range((1, col)).value
-            if header_value in BASE_HEADINGS:
-                column_locs[header_value] = i + 1
-        for header in BASE_HEADINGS:
-            assert(header in column_locs)
 
         # Set date based on selector
         label = window.date_select.date().toString("MM/dd/yyyy")
 
+
         # Ask user for confirmation about going through with adding data
-        confirm = QMessageBox.information(window, "Adding data to sheet", f"Adding column {label} to\n{sheet.name}\nContinue?",
+        confirm = QMessageBox.question(window, "Adding data to sheet", f"Adding column {label} to\n{sheet.name}\nContinue?",
                                       QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
         if confirm == QMessageBox.StandardButton.Cancel:
             return
+
+        # Find locations of all columns
+        column_locs = {}
+        extra_column_strings = []
+        extra_column_nums = []
+        for col in range(1, sheet.used_range.last_cell.column + 1):
+            header_value = sheet.range((1, col)).value
+            if header_value in BASE_HEADINGS:
+                column_locs[header_value] = col
+            else:
+                extra_column_strings.append(f"{_col_letter(col)} | {header_value}")
+                extra_column_nums.append(col)
+        # If required header isn't found, ask user for its new location
+        for header in BASE_HEADINGS:
+            if header not in column_locs:
+                chosen, ok = QInputDialog.getItem(window, "Missing Column",
+                                                  f"Could not find column '{header}'.\nSelect column to use instead:",
+                                                  extra_column_strings, editable=False)
+                if not ok:
+                    return
+
+                column_locs[header] = extra_column_nums[extra_column_strings.index(chosen)]
 
         # Insert data before last column
         if "Outcome of Correspondence" in column_locs:
