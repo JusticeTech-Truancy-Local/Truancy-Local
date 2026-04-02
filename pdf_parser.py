@@ -14,8 +14,10 @@ def extract_students_from_pdf(pdf_path):
         r'\d\d\d\d-\d\d\d\d\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
     )
     school_pattern = re.compile(r'\D* \d\d\d\d-\d\d\d\d')
+    date_pattern = re.compile(r'(\d\d)/(\d\d)/(\d\d\d\d)')
 
     school_name = ""
+    generated_date = None
 
     #open and process each page in the PDF
     with pdfplumber.open(pdf_path) as pdf:
@@ -31,6 +33,11 @@ def extract_students_from_pdf(pdf_path):
                 if school_match:
                     assert not school_name or school_name == line
                     school_name = line
+
+                # set date if this line contains one
+                date_match = re.match(date_pattern, line)
+                if date_match:
+                    generated_date = (int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)))
 
                 # start of a new student block based on the # symbol
                 if "#" in line:
@@ -73,4 +80,4 @@ def extract_students_from_pdf(pdf_path):
         if current_student:
             students.append(current_student)
 
-    return school_name, students
+    return school_name, generated_date, students

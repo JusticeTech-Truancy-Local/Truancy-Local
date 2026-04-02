@@ -15,7 +15,7 @@ def open_excel(window):
             window.settings.setValue("excel_dir", os.path.dirname(excel_path))
             window.settings.sync()
             window.excel_path_bar.setText(excel_path)
-            window.excel_path_bar.repaint()
+            window.excel_path_bar.repaint() # Manual repaint so box is filled before excel opens
 
             workbook = xw.Book(excel_path)
 

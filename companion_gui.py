@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QGridLayout, QTextEdit, QCheckBox, QSizePolicy, QLabel, \
-    QScrollArea, QLineEdit, QMessageBox, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout
-from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt
+from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, \
+    QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem
+from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt, QDate
 import xlwings as xw
 
 from companion_btns.open_pdf import select_pdf, open_pdf
@@ -15,7 +15,7 @@ from companion_btns.status_box import StatusBox
 
 class TruancyWindow(QMainWindow):
 
-    pdf_opened = pyqtSignal(str, list, str)
+    pdf_opened = pyqtSignal(str, list, str, tuple)
     excel_opened = pyqtSignal(xw.Book)
 
     def __init__(self):
@@ -57,6 +57,7 @@ class TruancyWindow(QMainWindow):
         self.add_absences_button = QPushButton("Add Report to Sheet")
         self.add_absences_button.clicked.connect(lambda: add_report_to_sheet(self))
         self.sheets_combo = QComboBox()
+        self.date_select = QDateEdit()
 
         # Text box to hold status messages for user
         self.status_box = StatusBox()
@@ -78,7 +79,7 @@ class TruancyWindow(QMainWindow):
 
         self.step_containers = [contain_widgets("1. ☐", [excel_button, self.excel_path_bar]),
                                 contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
-                                contain_widgets("3. ☐", [self.add_absences_button, self.sheets_combo])]
+                                contain_widgets("3. ☐", [self.add_absences_button, self.sheets_combo, self.date_select])]
         for sc in self.step_containers:
             center_layout.addWidget(sc)
         center_layout.addWidget(status_scroll)
@@ -100,11 +101,12 @@ class TruancyWindow(QMainWindow):
         self.workbook.sheets[sheet].range(address).select()
 
 
-    @pyqtSlot(str, list, str)
-    def update_students(self, file_path, new_students, school_name):
+    @pyqtSlot(str, list, str, tuple)
+    def update_students(self, file_path, new_students, school_name, generated_date):
         self.pdf_path = file_path
         self.students = new_students
         self.school_name = school_name
+        self.date_select.setDate(QDate(generated_date[2], generated_date[0], generated_date[1]))
         self.check_files_ready(did_update=True)
 
 
@@ -115,7 +117,6 @@ class TruancyWindow(QMainWindow):
         self.sheets_combo.clear()
         if bool(self.workbook):
             self.sheets_combo.addItems(["[Create new]"] + [x.name for x in self.workbook.sheets])
-        self.sheets_combo.setEnabled(bool(self.workbook))
         self.check_files_ready(did_update=True)
 
     def check_files_ready(self, did_update=False):

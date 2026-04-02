@@ -1,6 +1,4 @@
-from PyQt6.QtGui import QTextCharFormat, QColor, QFont, QTextCursor
 from PyQt6.QtWidgets import QMessageBox, QInputDialog
-from datetime import datetime
 
 from constructor import Student
 
@@ -38,17 +36,19 @@ def add_report_to_sheet(window):
         for header in BASE_HEADINGS:
             assert(header in column_locs)
 
-        # Ask user for column header - today's date
-        suggested_date = datetime.now().strftime("%m/%d/%Y")
-        label, ok = QInputDialog.getText(
-            window,
-            "Column Label",
-            "Enter date for this week's absences:",
-            text=suggested_date
-        )
-        # Don't add data if user pressed cancel
-        if not ok:
-            return
+        # # Ask user for column header - today's date
+        # suggested_date = datetime.now().strftime("%m/%d/%Y")
+        # label, ok = QInputDialog.getText(
+        #     window,
+        #     "Column Label",
+        #     "Enter date for this week's absences:",
+        #     text=suggested_date
+        # )
+        # # Don't add data if user pressed cancel
+        # if not ok:
+        #     return
+
+        label = window.date_select.date().toString("MM/dd/yyyy")
 
 
         # Insert data before last column
