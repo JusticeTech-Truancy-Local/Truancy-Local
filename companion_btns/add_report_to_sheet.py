@@ -164,10 +164,20 @@ def add_report_to_sheet(window):
         grade_suffix = ["", "st", "nd", "rd", "th", "th", "th", "th", "th", "th", "th", "th", "th"]
 
         # Add new rows for unmatched students
-        extra_row = last_row + 1
         for student in unmatched:
-            history = add_student(sheet, student, insert_col, extra_row, column_locs["Suspension Hours"])
-            track_group(student, history, groups, extra_row, True)
+            insert_row = 1
+            cont = True
+            while cont:
+                insert_row += 1
+                currname = sheet.range(f'{_col_letter(column_locs["Last Name"])}{insert_row}').value
+                cont = bool(currname) and student.lastName > currname
+
+
+            sheet.range(f"{insert_row}:{insert_row}").insert('down')
+            sheet.range(f"{insert_row}:{insert_row}").color = None
+
+            history = add_student(sheet, student, insert_col, insert_row, column_locs["Suspension Hours"])
+            track_group(student, history, groups, insert_row, True)
 
             try:
                 gradenum = int(student.grade)
@@ -175,13 +185,12 @@ def add_report_to_sheet(window):
             except TypeError:
                 grade = student.grade
 
-            sheet.range(f'{_col_letter(column_locs["Last Name"])}{extra_row}').value = student.lastName
-            sheet.range(f'{_col_letter(column_locs["First Name"])}{extra_row}').value = student.firstName
-            sheet.range(f'{_col_letter(column_locs["Student #"])}{extra_row}').value = student.id
-            sheet.range(f'{_col_letter(column_locs["Age"])}{extra_row}').value = student.age
-            sheet.range(f'{_col_letter(column_locs["Grade"])}{extra_row}').value = grade
+            sheet.range(f'{_col_letter(column_locs["Last Name"])}{insert_row}').value = student.lastName
+            sheet.range(f'{_col_letter(column_locs["First Name"])}{insert_row}').value = student.firstName
+            sheet.range(f'{_col_letter(column_locs["Student #"])}{insert_row}').value = student.id
+            sheet.range(f'{_col_letter(column_locs["Age"])}{insert_row}').value = student.age
+            sheet.range(f'{_col_letter(column_locs["Grade"])}{insert_row}').value = grade
 
-            extra_row += 1
 
         # Print summary
         print(f"\n=== SUMMARY ===")
