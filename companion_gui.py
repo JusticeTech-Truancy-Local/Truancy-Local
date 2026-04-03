@@ -3,9 +3,11 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, \
     QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt, QDate
 import xlwings as xw
+from docxtpl import DocxTemplate
 
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
+from companion_btns.open_docx import open_docx
 from companion_btns.add_report_to_sheet import add_report_to_sheet
 from difflib import SequenceMatcher
 import os
@@ -17,6 +19,7 @@ class TruancyWindow(QMainWindow):
 
     pdf_opened = pyqtSignal(str, list, str, tuple)
     excel_opened = pyqtSignal(xw.Book)
+    docx_opened = pyqtSignal(str, object)
 
     def __init__(self):
         super().__init__()
@@ -25,12 +28,13 @@ class TruancyWindow(QMainWindow):
         self.setMinimumWidth(375)
         self.settings = QSettings("TruancyApp", "TruancyRecorder")
         
-        # Store loaded students and workbook
+        # Store loaded students, workbook, and letter
         self.pdf_path = ""
         self.students = []
         self.school_name = ""
         self.workbook = None
-
+        self.docx_path = ""
+        self.docx_template = None
 
         # Associated with select_pdf and open_pdf
         select_pdf_button = QPushButton("Select Report PDF")
@@ -54,7 +58,16 @@ class TruancyWindow(QMainWindow):
         self.excel_path_bar = QLineEdit()
         self.excel_path_bar.setReadOnly(True)
         self.excel_path_bar.setPlaceholderText("No Excel file selected")
-        
+
+        # Associated with open_docx
+        select_docx_button = QPushButton("Select Word Doc")
+        select_docx_button.clicked.connect(lambda: open_docx(self))
+        select_docx_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/word.png")))
+        self.docx_opened.connect(self.update_docx)
+        self.docx_path_bar = QLineEdit()
+        self.docx_path_bar.setReadOnly(True)
+        self.docx_path_bar.setPlaceholderText("No Word document loaded")
+
         # Button to add report to sheet
         self.add_absences_button = QPushButton("Add Report to Sheet")
         self.add_absences_button.clicked.connect(lambda: add_report_to_sheet(self))
@@ -80,9 +93,12 @@ class TruancyWindow(QMainWindow):
             container.setLayout(hlayout)
             return container
 
-        self.step_containers = [contain_widgets("1. ☐", [excel_button, self.excel_path_bar]),
-                                contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
-                                contain_widgets("3. ☐", [self.add_absences_button, self.sheets_combo, self.date_select])]
+        self.step_containers = [
+            contain_widgets("1. ☐", [excel_button, self.excel_path_bar]),
+            contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
+            contain_widgets("3. ☐", [select_docx_button, self.docx_path_bar]),
+            contain_widgets("4. ☐", [self.add_absences_button, self.sheets_combo, self.date_select]),
+        ]
         for sc in self.step_containers:
             center_layout.addWidget(sc)
         center_layout.addWidget(status_scroll)
@@ -103,7 +119,6 @@ class TruancyWindow(QMainWindow):
         self.workbook.sheets[sheet].select()
         self.workbook.sheets[sheet].range(address).select()
 
-
     @pyqtSlot(str, list, str, tuple)
     def update_students(self, file_path, new_students, school_name, generated_date):
         self.pdf_path = file_path
@@ -112,7 +127,6 @@ class TruancyWindow(QMainWindow):
         self.date_select.setDate(QDate(generated_date[2], generated_date[0], generated_date[1]))
         self.check_files_ready(did_update=True)
 
-
     @pyqtSlot(xw.Book)
     def update_workbook(self, new_workbook):
         self.workbook = new_workbook
@@ -120,8 +134,15 @@ class TruancyWindow(QMainWindow):
         self.update_sheet_selector()
         self.check_files_ready(did_update=True)
 
+    @pyqtSlot(str, object)
+    def update_docx(self, file_path, template):
+        self.docx_path = file_path
+        self.docx_template = template
+        self.check_files_ready(did_update=True)
+
     def check_files_ready(self, did_update=False):
         has_students = bool(self.students)
+        has_docx = bool(self.docx_path)
 
         # Check if excel window currently exists; clear if the window has been closed
         if self.workbook and self.workbook.fullname not in [i.fullname for i in xw.books]:
@@ -137,10 +158,11 @@ class TruancyWindow(QMainWindow):
         # Set checkboxes for each step
         self.step_containers[0].setTitle("1. " + ("☑" if has_workbook else "☐"))
         self.step_containers[1].setTitle("2. " + ("☑" if has_students else "☐"))
+        self.step_containers[2].setTitle("3. " + ("☑" if has_docx else "☐"))
 
         # Set dropdown to sheet that best matches school name
         if did_update:
-            self.step_containers[2].setTitle("3. ☐")
+            self.step_containers[3].setTitle("4. ☐")
             if has_workbook and has_students:
                 best_sheet = self.best_match(self.school_name, [x.name for x in self.workbook.sheets])
                 self.sheets_combo.setCurrentIndex(best_sheet + 1)
