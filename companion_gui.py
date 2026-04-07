@@ -1,3 +1,4 @@
+import xlwings
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, \
     QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem
@@ -18,7 +19,7 @@ from companion_btns.status_box import StatusBox
 class TruancyWindow(QMainWindow):
 
     pdf_opened = pyqtSignal(str, list, str, tuple)
-    excel_opened = pyqtSignal(xw.Book)
+    excel_opened = pyqtSignal(str)
     docx_opened = pyqtSignal(str, object)
 
     def __init__(self):
@@ -127,9 +128,9 @@ class TruancyWindow(QMainWindow):
         self.date_select.setDate(QDate(generated_date[2], generated_date[0], generated_date[1]))
         self.check_files_ready(did_update=True)
 
-    @pyqtSlot(xw.Book)
+    @pyqtSlot(str)
     def update_workbook(self, new_workbook):
-        self.workbook = new_workbook
+        self.workbook = xlwings.Book(new_workbook)
         # Update sheets in combo box
         self.update_sheet_selector()
         self.check_files_ready(did_update=True)
