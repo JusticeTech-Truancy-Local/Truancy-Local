@@ -1,6 +1,7 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, \
-    QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem
+    QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem, \
+    QDialog, QLabel, QMessageBox
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt, QDate
 import xlwings as xw
 from docxtpl import DocxTemplate
@@ -11,6 +12,7 @@ from companion_btns.open_docx import open_docx
 from companion_btns.add_report_to_sheet import add_report_to_sheet
 from difflib import SequenceMatcher
 import os
+import subprocess
 
 from companion_btns.status_box import StatusBox
 
@@ -23,6 +25,11 @@ class TruancyWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        # Show Terms of Service popup at startup
+        if not self.show_terms_of_service():
+            import sys
+            sys.exit()
 
         self.setWindowTitle("TruancyRecorder")
         self.setMinimumWidth(375)
@@ -112,6 +119,57 @@ class TruancyWindow(QMainWindow):
 
         self.check_files_ready()
 
+    def open_terms_file(self):
+        """Opens the Terms of Service Word document"""
+        terms_file = os.path.join(os.path.dirname(__file__), "testing", "TermsOfService.docx")
+        if not os.path.exists(terms_file):
+            QMessageBox.warning(self, "File Not Found", "Could not find TermsOfService.docx")
+            return
+        try:
+            os.startfile(terms_file)  # Windows - opens with default app (Word)
+        except AttributeError:
+            subprocess.Popen(["xdg-open", terms_file])  # Linux
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open file: {e}")
+
+    def show_terms_of_service(self):
+        """Shows terms popup with View Full Terms button, returns True if user accepts"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Terms of Service")
+        dialog.setModal(True)
+
+        terms_summary = QLabel(
+            "TRUANCY RECORDER - TERMS OF SERVICE\n\n"
+            "This application processes student absence data for educational purposes only.\n\n"
+            "By using this application, you agree to our full Terms of Service.\n\n"
+            "Do you accept these terms?"
+        )
+        terms_summary.setWordWrap(True)
+        terms_summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        view_terms_button = QPushButton("View Full Terms")
+        view_terms_button.clicked.connect(self.open_terms_file)
+
+        accept_button = QPushButton("I Accept")
+        accept_button.clicked.connect(dialog.accept)
+
+        decline_button = QPushButton("I Don't Accept")
+        decline_button.clicked.connect(dialog.reject)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(accept_button)
+        button_layout.addWidget(decline_button)
+
+        layout = QVBoxLayout()
+        layout.addWidget(terms_summary)
+        layout.addWidget(view_terms_button)
+        layout.addSpacing(20)
+        layout.addLayout(button_layout)
+
+        dialog.setLayout(layout)
+        result = dialog.exec()
+        return result == QDialog.DialogCode.Accepted
+
     @pyqtSlot(str, str)
     def go_to_cell(self, sheet, address):
         assert(self.workbook is not None)
@@ -130,7 +188,6 @@ class TruancyWindow(QMainWindow):
     @pyqtSlot(xw.Book)
     def update_workbook(self, new_workbook):
         self.workbook = new_workbook
-        # Update sheets in combo box
         self.update_sheet_selector()
         self.check_files_ready(did_update=True)
 
@@ -170,7 +227,7 @@ class TruancyWindow(QMainWindow):
         return has_students and has_workbook
 
     def best_match(self, name, options):
-        ## Returns best matching string in options, -1 if none match well
+        # Returns best matching string in options, -1 if none match well
         ratios = [SequenceMatcher(None, name.lower(), opt.lower()).ratio() for opt in options]
         maxr = max(ratios)
         if maxr > 0.5:
