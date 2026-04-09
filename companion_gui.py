@@ -28,14 +28,14 @@ class TruancyWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Show Terms of Service popup at startup
-        if not self.show_terms_of_service():
-            import sys
-            sys.exit()
-
         self.setWindowTitle("TruancyRecorder")
         self.setMinimumWidth(375)
         self.settings = QSettings("TruancyApp", "TruancyRecorder")
+
+        # Show popup at startup, internal use policy
+        if not self.show_internal_use_policy():
+            import sys
+            sys.exit()
         
         # Store loaded students, workbook, and letter
         self.pdf_path = ""
@@ -127,8 +127,8 @@ class TruancyWindow(QMainWindow):
 
         self.check_files_ready()
 
-    def open_terms_file(self):
-        """Opens the Terms of Service Word document"""
+    def open_policy_file(self):
+        """Opens the Internal Use Policy Word document"""
         terms_file = os.path.join(os.path.dirname(__file__), ".", "InternalUsePolicy.docx")
         if not os.path.exists(terms_file):
             QMessageBox.warning(self, "File Not Found", "Could not find InternalUsePolicy.docx")
@@ -140,8 +140,8 @@ class TruancyWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open file: {e}")
 
-    def show_terms_of_service(self):
-        """Shows terms popup with View Full Terms button, returns True if user accepts"""
+    def show_internal_use_policy(self):
+        """Shows policy popup with View Full Policy button, returns True if user accepts"""
         dialog = QDialog(self)
         dialog.setWindowTitle("Internal Use Policy")
         dialog.setModal(True)
@@ -155,8 +155,8 @@ class TruancyWindow(QMainWindow):
         terms_summary.setWordWrap(True)
         terms_summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        view_terms_button = QPushButton("View Full Terms")
-        view_terms_button.clicked.connect(self.open_terms_file)
+        view_terms_button = QPushButton("View Full Policy")
+        view_terms_button.clicked.connect(self.open_policy_file)
 
         accept_button = QPushButton("I Accept")
         accept_button.clicked.connect(dialog.accept)
