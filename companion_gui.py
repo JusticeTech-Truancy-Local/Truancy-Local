@@ -9,6 +9,7 @@ from docxtpl import DocxTemplate
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.open_docx import open_docx
+from companion_btns.generate_template import generate_template
 from companion_btns.add_report_to_sheet import add_report_to_sheet
 from difflib import SequenceMatcher
 import os
@@ -82,6 +83,11 @@ class TruancyWindow(QMainWindow):
         self.date_select = QDateEdit()
         self.date_select.setMaximumWidth(80)
 
+        # Button for DOCX generation
+        self.generate_template_button = QPushButton("Generate Letter")
+        self.generate_template_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/word.png")))
+        self.generate_template_button.clicked.connect(lambda: generate_template(self))
+
         # Text box to hold status messages for user
         self.status_box = StatusBox()
         self.status_box.go_to_cell.connect(self.go_to_cell)
@@ -105,6 +111,7 @@ class TruancyWindow(QMainWindow):
             contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
             contain_widgets("3. ☐", [select_docx_button, self.docx_path_bar]),
             contain_widgets("4. ☐", [self.add_absences_button, self.sheets_combo, self.date_select]),
+            contain_widgets("5. ☐", [self.generate_template_button]),
         ]
         for sc in self.step_containers:
             center_layout.addWidget(sc)
