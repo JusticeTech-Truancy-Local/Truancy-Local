@@ -133,7 +133,7 @@ class TruancyWindow(QMainWindow):
 
     def open_policy_file(self):
         """Opens the Internal Use Policy Word document"""
-        terms_file = os.path.join(os.path.dirname(__file__), ".", "InternalUsePolicy.docx")
+        terms_file = os.path.join(os.path.dirname(__file__), "assets", "InternalUsePolicy.docx")
         if not os.path.exists(terms_file):
             QMessageBox.warning(self, "File Not Found", "Could not find InternalUsePolicy.docx")
             return
