@@ -129,9 +129,9 @@ class TruancyWindow(QMainWindow):
 
     def open_terms_file(self):
         """Opens the Terms of Service Word document"""
-        terms_file = os.path.join(os.path.dirname(__file__), "testing", "TermsOfService.docx")
+        terms_file = os.path.join(os.path.dirname(__file__), ".", "InternalUsePolicy.docx")
         if not os.path.exists(terms_file):
-            QMessageBox.warning(self, "File Not Found", "Could not find TermsOfService.docx")
+            QMessageBox.warning(self, "File Not Found", "Could not find InternalUsePolicy.docx")
             return
         try:
             os.startfile(terms_file)  # Windows - opens with default app (Word)
@@ -143,13 +143,13 @@ class TruancyWindow(QMainWindow):
     def show_terms_of_service(self):
         """Shows terms popup with View Full Terms button, returns True if user accepts"""
         dialog = QDialog(self)
-        dialog.setWindowTitle("Terms of Service")
+        dialog.setWindowTitle("Internal Use Policy")
         dialog.setModal(True)
 
         terms_summary = QLabel(
-            "TRUANCY RECORDER - TERMS OF SERVICE\n\n"
+            "TRUANCY RECORDER - INTERNAL USE POLICY\n\n"
             "This application processes student absence data for educational purposes only.\n\n"
-            "By using this application, you agree to our full Terms of Service.\n\n"
+            "By using this application, you agree to our full Internal Use Policy.\n\n"
             "Do you accept these terms?"
         )
         terms_summary.setWordWrap(True)
