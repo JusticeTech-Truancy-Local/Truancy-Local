@@ -59,7 +59,7 @@ def generate_template(window):
     # Asks user to confirm the selected name before generating
     confirm = QMessageBox.question(
         window, "Generate Letter",
-        f"Generate letter for:\n{full_name}\nContinue?",
+        f"Generate letter for:\n {full_name} \nContinue?",
         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
     )
     if confirm == QMessageBox.StandardButton.Cancel:
