@@ -32,10 +32,15 @@ class TruancyWindow(QMainWindow):
         self.setMinimumWidth(375)
         self.settings = QSettings("TruancyApp", "TruancyRecorder")
 
-        # Show popup at startup, internal use policy
-        if not self.show_internal_use_policy():
-            import sys
-            sys.exit()
+        #self.settings.setValue("agreed_policy", 0)
+
+        # Show popup at startup, internal use policy, unless already agreed
+        if not self.settings.value("agreed_policy", 0):
+            if not self.show_internal_use_policy():
+                import sys
+                sys.exit()
+            else:
+                self.settings.setValue("agreed_policy", 1)
         
         # Store loaded students, workbook, and letter
         self.pdf_path = ""
