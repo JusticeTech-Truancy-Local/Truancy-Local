@@ -74,7 +74,7 @@ class TruancyWindow(QMainWindow):
         self.excel_path_bar.setPlaceholderText("No Excel file selected")
 
         # Associated with open_docx
-        select_docx_button = QPushButton("Select Word Doc")
+        select_docx_button = QPushButton("Select Letter Template")
         select_docx_button.clicked.connect(lambda: open_docx(self))
         select_docx_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/word.png")))
         self.docx_opened.connect(self.update_docx)
@@ -90,8 +90,7 @@ class TruancyWindow(QMainWindow):
         self.date_select.setMaximumWidth(80)
 
         # Button for DOCX generation
-        self.generate_template_button = QPushButton("Generate Letter")
-        self.generate_template_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/word.png")))
+        self.generate_template_button = QPushButton("Generate Letter for Selected Row in Excel")
         self.generate_template_button.clicked.connect(lambda: generate_template(self))
 
         # Text box to hold status messages for user
@@ -115,13 +114,13 @@ class TruancyWindow(QMainWindow):
         self.step_containers = [
             contain_widgets("1. ☐", [excel_button, self.excel_path_bar]),
             contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
-            contain_widgets("3. ☐", [select_docx_button, self.docx_path_bar]),
-            contain_widgets("4. ☐", [self.add_absences_button, self.sheets_combo, self.date_select]),
-            contain_widgets("5. ☐", [self.generate_template_button]),
+            contain_widgets("3. ☐ (requires steps 1 and 2)", [self.add_absences_button, self.sheets_combo, self.date_select]),
+            status_scroll,
+            contain_widgets("4. ☐", [select_docx_button, self.docx_path_bar]),
+            contain_widgets("5. (requires steps 1 and 4)", [self.generate_template_button]),
         ]
         for sc in self.step_containers:
             center_layout.addWidget(sc)
-        center_layout.addWidget(status_scroll)
         
         center_widget = QWidget()
         center_widget.setLayout(center_layout)
@@ -225,16 +224,18 @@ class TruancyWindow(QMainWindow):
         # Grey out the add report to sheet button unless all data has been loaded
         self.add_absences_button.setEnabled(has_students and has_workbook)
         # Grey out the open pdf in new window button unless a pdf has been selected
-        self.open_pdf_button.setEnabled(bool(self.pdf_path))
+        self.open_pdf_button.setEnabled(has_students)
+        # Grey out the generate letter button unless doc and excel selected
+        self.generate_template_button.setEnabled(has_workbook and has_docx)
 
         # Set checkboxes for each step
         self.step_containers[0].setTitle("1. " + ("☑" if has_workbook else "☐"))
         self.step_containers[1].setTitle("2. " + ("☑" if has_students else "☐"))
-        self.step_containers[2].setTitle("3. " + ("☑" if has_docx else "☐"))
+        self.step_containers[4].setTitle("4. " + ("☑" if has_docx else "☐"))
 
         # Set dropdown to sheet that best matches school name
         if did_update:
-            self.step_containers[3].setTitle("4. ☐")
+            self.step_containers[2].setTitle("3. ☐ (requires steps 1 and 2)")
             if has_workbook and has_students:
                 best_sheet = self.best_match(self.school_name, [x.name for x in self.workbook.sheets])
                 self.sheets_combo.setCurrentIndex(best_sheet + 1)

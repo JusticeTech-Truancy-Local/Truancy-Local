@@ -231,7 +231,7 @@ def add_report_to_sheet(window):
         window.status_box.report_update(groups, label, Student.redThreshold, sheet.name,
                                         (_col_letter(insert_col), _col_letter(insert_col + 1)))
         # Update checkbox
-        window.step_containers[3].setTitle("4. ☑")
+        window.step_containers[2].setTitle("3. ☑ (requires steps 1 and 2)")
         
     except Exception as e:
         import traceback
