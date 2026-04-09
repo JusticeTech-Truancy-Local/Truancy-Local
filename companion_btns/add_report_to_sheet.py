@@ -127,11 +127,7 @@ def add_report_to_sheet(window):
         
         # Track data
         no_match = 0
-        groups = {-1: [],
-                  0: [],
-                  1: [],
-                  2: [],
-                  3: []}
+
         
         # Loop through Excel rows and match
         for row in range(2, last_row + 1):
@@ -165,25 +161,7 @@ def add_report_to_sheet(window):
                 # Remove from unmatched set
                 unmatched.remove(matched_student)
 
-                history = add_student(sheet, matched_student, insert_col, row, column_locs["Suspension Hours"])
-
-                # Add strings from the letter status columns
-                prelim = sheet.range((row, column_locs["Date Preliminary Letter Sent"])).value
-                if prelim is None:
-                    prelim = ""
-                elif isinstance(prelim, datetime):
-                    prelim = prelim.strftime('%m/%d/%Y')
-                else:
-                    prelim = str(prelim)
-                mediation = sheet.range((row, column_locs["Date Mediation Letter Sent"])).value
-                if mediation is None:
-                    mediation = ""
-                elif isinstance(mediation, datetime):
-                    mediation = mediation.strftime('%m/%d/%Y')
-                else:
-                    mediation = str(mediation)
-
-                track_group(matched_student, history, groups, row, letters=(prelim, mediation))
+                add_student(sheet, matched_student, insert_col, row, column_locs["Suspension Hours"])
 
             else:
                 # No match found; leave blank no value
@@ -199,6 +177,8 @@ def add_report_to_sheet(window):
         # Suffixes to add to grade number. Matched by index in list
         grade_suffix = ["", "st", "nd", "rd", "th", "th", "th", "th", "th", "th", "th", "th", "th"]
 
+        new_list = set()
+
         # Add new rows for unmatched students
         for student in unmatched:
             insert_row = 1
@@ -212,8 +192,7 @@ def add_report_to_sheet(window):
             sheet.range(f"{insert_row}:{insert_row}").insert('down')
             sheet.range(f"{insert_row}:{insert_row}").color = None
 
-            history = add_student(sheet, student, insert_col, insert_row, column_locs["Suspension Hours"])
-            track_group(student, history, groups, insert_row, is_new=True)
+            add_student(sheet, student, insert_col, insert_row, column_locs["Suspension Hours"])
 
             try:
                 gradenum = int(student.grade)
@@ -226,6 +205,21 @@ def add_report_to_sheet(window):
             sheet.range((insert_row, column_locs["Student #"])).value = student.id
             sheet.range((insert_row, column_locs["Age"])).value = student.age
             sheet.range((insert_row, column_locs["Grade"])).value = grade
+
+            new_list.add(sheet.range((insert_row, column_locs["Student #"])).value)
+
+            last_row += 1
+
+        # Groups of students for report table
+        groups = {-1: [],
+                  0: [],
+                  1: [],
+                  2: [],
+                  3: []}
+
+        # Loop through students again for report
+        for row in range(2, last_row + 1):
+            track_group(groups, sheet, row, insert_col, column_locs, new_list)
 
 
         # Print summary
@@ -262,17 +256,6 @@ def blank_sheet(workbook, name):
     return sheet
 
 def add_student(sheet, student, column, row, suspension_col):
-    history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data
-
-    # March thru previous weeks to record history of being over the limit
-    for c in range(max(suspension_col + 1, column-4), column, 2):
-        val_ex = sheet.range((row, c)).value
-        val_unex = sheet.range((row, c + 1)).value
-        try:
-            val_int = int(val_ex) + int(val_unex)
-            history.append(val_int >= Student.redThreshold)
-        except TypeError:
-            history.append(None)
 
     if student.unexcused:
         try:
@@ -299,9 +282,6 @@ def add_student(sheet, student, column, row, suspension_col):
                 # Red for over limit
                 cell_ex.color = (255, 0, 0)  # Red
                 cell_unex.color = (255, 0, 0)
-                history.append(True)
-            else:
-                history.append(False)
 
         except (ValueError, TypeError):
             print(f"Warning: Could not convert an absence total")
@@ -310,25 +290,54 @@ def add_student(sheet, student, column, row, suspension_col):
             sheet.range((row, column + 1)).value = "no data"
             sheet.range((row, column)).color = (217, 217, 217)
             sheet.range((row, column + 1)).color = (217, 217, 217)
-            history.append(None)
     else:
         # Student matched but has no absence data; no color
         sheet.range((row, column)).value = "no data"
         sheet.range((row, column + 1)).value = "no data"
         sheet.range((row, column)).color = (217, 217, 217)
         sheet.range((row, column + 1)).color = (217, 217, 217)
-        history.append(None)
-
-    return history
 
 
-def track_group(student, history, groups, row, letters=("", ""), is_new=False):
+
+def track_group(groups, sheet, row, column, column_locs, new_list):
+
+    # Add strings from the letter status columns
+    prelim = sheet.range((row, column_locs["Date Preliminary Letter Sent"])).value
+    if prelim is None:
+        prelim = ""
+    elif isinstance(prelim, datetime):
+        prelim = prelim.strftime('%m/%d/%Y')
+    else:
+        prelim = str(prelim)
+    mediation = sheet.range((row, column_locs["Date Mediation Letter Sent"])).value
+    if mediation is None:
+        mediation = ""
+    elif isinstance(mediation, datetime):
+        mediation = mediation.strftime('%m/%d/%Y')
+    else:
+        mediation = str(mediation)
+
+    name = f"{sheet.range((row, column_locs['Last Name'])).value}, {sheet.range((row, column_locs['First Name'])).value}"
+
+    student_data = (name, row, prelim, mediation)
+
+
+    history = [] # Last three weeks' status. True = over limit, False = under limit, None = no data
+
+    # March thru previous weeks to record history of being over the limit
+    for c in range(max(column_locs["Suspension Hours"] + 1, column-4), column+2, 2):
+        val_ex = sheet.range((row, c)).value
+        val_unex = sheet.range((row, c + 1)).value
+        try:
+            val_int = int(val_ex) + int(val_unex)
+            history.append(val_int >= Student.redThreshold)
+        except (TypeError, ValueError):
+            history.append(None)
+
     # Add students to groups based on whether they were over limits the last three weeks
     updated_history = [False * (3 - len(history))] + [bool(x) for x in history]
 
-    student_data = (student, row, letters[0], letters[1])
-
-    if is_new:
+    if sheet.range((row, column_locs["Student #"])).value in new_list:
         groups[0].append(student_data)
 
     count = 0
@@ -337,8 +346,9 @@ def track_group(student, history, groups, row, letters=("", ""), is_new=False):
 
     if count > 0:
         groups[count].append(student_data)
-    elif updated_history[-2]:
-            groups[-1].append(student_data)
+    elif updated_history[-2] and history[-1] is not None:
+        groups[-1].append(student_data)
+
 
 
 def _col_letter(col_num):

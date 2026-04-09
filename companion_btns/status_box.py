@@ -105,7 +105,7 @@ class StatusBox(QTextEdit):
         format.setAnchor(True)
         format.setAnchorHref(sheet + "!" + cols[0] + str(row) + ":" + cols[1] + str(row))
         format.setForeground(QColor('blue'))
-        cursor.insertText(f"{student.lastName}, {student.firstName}", format)
+        cursor.insertText(student, format)
         format.setAnchor(False)
         format.setAnchorHref(None)
         format.setForeground(QColor('black'))
