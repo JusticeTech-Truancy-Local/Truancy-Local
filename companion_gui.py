@@ -1,7 +1,8 @@
 import xlwings
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, \
-    QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem
+    QScrollArea, QLineEdit, QComboBox, QVBoxLayout, QGroupBox, QHBoxLayout, QDateEdit, QLayoutItem, \
+    QDialog, QLabel, QMessageBox
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QSettings, Qt, QDate
 import xlwings as xw
 from docxtpl import DocxTemplate
@@ -9,9 +10,11 @@ from docxtpl import DocxTemplate
 from companion_btns.open_pdf import select_pdf, open_pdf
 from companion_btns.open_excel import open_excel
 from companion_btns.open_docx import open_docx
+from companion_btns.generate_template import generate_template
 from companion_btns.add_report_to_sheet import add_report_to_sheet
 from difflib import SequenceMatcher
 import os
+import subprocess
 
 from companion_btns.status_box import StatusBox
 
@@ -24,6 +27,11 @@ class TruancyWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        # Show Terms of Service popup at startup
+        if not self.show_terms_of_service():
+            import sys
+            sys.exit()
 
         self.setWindowTitle("TruancyRecorder")
         self.setMinimumWidth(375)
@@ -76,6 +84,11 @@ class TruancyWindow(QMainWindow):
         self.date_select = QDateEdit()
         self.date_select.setMaximumWidth(80)
 
+        # Button for DOCX generation
+        self.generate_template_button = QPushButton("Generate Letter")
+        self.generate_template_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), "assets/word.png")))
+        self.generate_template_button.clicked.connect(lambda: generate_template(self))
+
         # Text box to hold status messages for user
         self.status_box = StatusBox()
         self.status_box.go_to_cell.connect(self.go_to_cell)
@@ -99,6 +112,7 @@ class TruancyWindow(QMainWindow):
             contain_widgets("2. ☐", [select_pdf_button, self.pdf_path_bar, self.open_pdf_button]),
             contain_widgets("3. ☐", [select_docx_button, self.docx_path_bar]),
             contain_widgets("4. ☐", [self.add_absences_button, self.sheets_combo, self.date_select]),
+            contain_widgets("5. ☐", [self.generate_template_button]),
         ]
         for sc in self.step_containers:
             center_layout.addWidget(sc)
@@ -112,6 +126,57 @@ class TruancyWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
         self.check_files_ready()
+
+    def open_terms_file(self):
+        """Opens the Terms of Service Word document"""
+        terms_file = os.path.join(os.path.dirname(__file__), "testing", "TermsOfService.docx")
+        if not os.path.exists(terms_file):
+            QMessageBox.warning(self, "File Not Found", "Could not find TermsOfService.docx")
+            return
+        try:
+            os.startfile(terms_file)  # Windows - opens with default app (Word)
+        except AttributeError:
+            subprocess.Popen(["xdg-open", terms_file])  # Linux
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open file: {e}")
+
+    def show_terms_of_service(self):
+        """Shows terms popup with View Full Terms button, returns True if user accepts"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Terms of Service")
+        dialog.setModal(True)
+
+        terms_summary = QLabel(
+            "TRUANCY RECORDER - TERMS OF SERVICE\n\n"
+            "This application processes student absence data for educational purposes only.\n\n"
+            "By using this application, you agree to our full Terms of Service.\n\n"
+            "Do you accept these terms?"
+        )
+        terms_summary.setWordWrap(True)
+        terms_summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        view_terms_button = QPushButton("View Full Terms")
+        view_terms_button.clicked.connect(self.open_terms_file)
+
+        accept_button = QPushButton("I Accept")
+        accept_button.clicked.connect(dialog.accept)
+
+        decline_button = QPushButton("I Don't Accept")
+        decline_button.clicked.connect(dialog.reject)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(accept_button)
+        button_layout.addWidget(decline_button)
+
+        layout = QVBoxLayout()
+        layout.addWidget(terms_summary)
+        layout.addWidget(view_terms_button)
+        layout.addSpacing(20)
+        layout.addLayout(button_layout)
+
+        dialog.setLayout(layout)
+        result = dialog.exec()
+        return result == QDialog.DialogCode.Accepted
 
     @pyqtSlot(str, str)
     def go_to_cell(self, sheet, address):
@@ -132,6 +197,7 @@ class TruancyWindow(QMainWindow):
     def update_workbook(self, new_workbook):
         self.workbook = xlwings.Book(new_workbook)
         # Update sheets in combo box
+
         self.update_sheet_selector()
         self.check_files_ready(did_update=True)
 
@@ -171,7 +237,7 @@ class TruancyWindow(QMainWindow):
         return has_students and has_workbook
 
     def best_match(self, name, options):
-        ## Returns best matching string in options, -1 if none match well
+        # Returns best matching string in options, -1 if none match well
         ratios = [SequenceMatcher(None, name.lower(), opt.lower()).ratio() for opt in options]
         maxr = max(ratios)
         if maxr > 0.5:
